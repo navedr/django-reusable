@@ -3,6 +3,7 @@ import locale
 import math
 import os
 import random
+import uuid
 from collections import namedtuple, OrderedDict
 from datetime import datetime, timedelta
 
@@ -542,3 +543,7 @@ def group_by_property(iterable, prop=None, prop_fn=None):
         items.append(item)
         group[key] = items
     return group
+
+
+def short_uuid():
+    return str(uuid.uuid5(uuid.NAMESPACE_DNS, f"django-reusable@{datetime.now()}")).split('-')[-1]

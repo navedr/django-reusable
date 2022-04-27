@@ -43,3 +43,6 @@ class ReadOnlyInput(forms.TextInput):
         attrs['style'] = 'display: none;'
         return f'{xstr(value)}{super().render(name, value, attrs, renderer)}'
 
+
+class DateInput(forms.DateInput):
+    input_type = 'date'
