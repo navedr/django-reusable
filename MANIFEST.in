@@ -1,0 +1,5 @@
+include *.py
+include COPYING
+include AUTHORS
+recursive-include django_reusable *
+recursive-exclude django_reusable *.pyc
