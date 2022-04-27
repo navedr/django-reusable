@@ -6,16 +6,12 @@ setuptools.setup(
     author='Naved Rangwala',
     author_email='naved@ecarone.com',
     description='Agnostic and easy to use reusable library for django',
-    url='http://dajaxproject.com',
+    url='https://github.com/navedr/django-reusable',
     license='BSD',
     packages=['django_reusable',
               'django_reusable.templatetags'],
     package_data={'django_reusable': ['templates/django_reusable/*']},
-    long_description=("Easy to use AJAX library for django, all the "
-                      "presentation logic resides outside the views and "
-                      "doesn't require any JS Framework. Dajaxice uses the "
-                      "unobtrusive standard-compliant (W3C) XMLHttpRequest "
-                      "1.0 object."),
+    long_description="django-reusable is a collection of common functionality needed in most Django projects.",
     install_requires=[
         'Django>=2.2'
     ],
