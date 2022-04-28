@@ -547,3 +547,12 @@ def group_by_property(iterable, prop=None, prop_fn=None):
 
 def short_uuid():
     return str(uuid.uuid5(uuid.NAMESPACE_DNS, f"django-reusable@{datetime.now()}")).split('-')[-1]
+
+
+def get_absolute_url(path):
+    request = global_request()
+    current_host = request.get_host() if request else settings.APP_HOST
+    scheme = request.scheme if request else 'http'
+    host = getattr(settings, 'CURRENT_HOST', None) or f'{scheme}://{current_host}'
+    absolute_url = host + path
+    return absolute_url
