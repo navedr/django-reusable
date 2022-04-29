@@ -1,0 +1,15 @@
+{% extends 'django_tables2/table.html' %}
+{% load template_utils %}
+
+{% block table.tfoot %}
+    {{ block.super }}
+    <tfoot>
+        {% for footer_row in table.extra_footers %}
+            <tr>
+                {% for column in table.columns %}
+                    <td {{ column.attrs.tf.as_html }}>{{ footer_row|get_item:column.name|default_if_none:"" }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tfoot>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% for field in form.visible_fields %}
+    <tr>
+        <td>
+            {% if forloop.first %}
+                {% for hidden in form.hidden_fields %}
+                    {{ hidden }}
+                {% endfor %}
+                {{ form.non_form_errors.as_ul }}
+            {% endif %}
+            {{ field.label }}
+        </td>
+        <td>
+            {% if hide_all_fields or form.readonly_fields and field.name in form.readonly_fields %}
+                {{ field.value }}
+                <div class="hide">
+                    {{ field }}
+                </div>
+            {% else %}
+                {{ field }}
+            {% endif %}
+            {{ field.errors.as_ul }}
+        </td>
+    </tr>
+{% endfor %}

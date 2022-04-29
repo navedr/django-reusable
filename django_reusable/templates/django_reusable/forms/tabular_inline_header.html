@@ -1,0 +1,14 @@
+<thead>
+    <tr>
+        {% for field in form.visible_fields %}
+            <th>{{ field.label|capfirst }}</th>
+        {% endfor %}
+        {% if extra_cell %}
+            <th>
+                {% autoescape off %}
+                    {{ extra_cell }}
+                {% endautoescape %}
+            </th>
+        {% endif %}
+    </tr>
+</thead>

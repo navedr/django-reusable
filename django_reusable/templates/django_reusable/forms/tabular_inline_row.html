@@ -1,0 +1,21 @@
+<tr class="{% cycle row1 row2 %}" {{ row_attr }}>
+    {% for field in form.visible_fields %}
+        <td>
+            {% if forloop.first %}
+                {% for hidden in form.hidden_fields %}
+                    {{ hidden }}
+                {% endfor %}
+                {{ form.non_form_errors.as_ul }}
+            {% endif %}
+            {{ field.errors.as_ul }}
+            {{ field }}
+        </td>
+    {% endfor %}
+    {% if extra_cell %}
+        <td>
+            {% autoescape off %}
+                {{ extra_cell }}
+            {% endautoescape %}
+        </td>
+    {% endif %}
+</tr>

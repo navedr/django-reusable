@@ -7,20 +7,9 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 
+from .filters import SearchInFilter
 from .forms import EnhancedBaseInlineFormSet
 from .utils import ifilter
-
-
-class SearchInFilter(admin.SimpleListFilter):
-    title = 'Search In'
-    parameter_name = 'search'
-    lookup_choices = []
-
-    def lookups(self, request, model_admin):
-        return self.lookup_choices
-
-    def queryset(self, request, queryset):
-        return queryset
 
 
 class EnhancedAdminInlineMixin(InlineModelAdmin):

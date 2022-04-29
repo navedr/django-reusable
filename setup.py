@@ -13,11 +13,13 @@ setuptools.setup(
     url='https://github.com/navedr/django-reusable',
     license='BSD',
     packages=['django_reusable',
-              'django_reusable.templatetags'],
+              'django_reusable.templatetags',
+              'django_reusable.django_tables2'],
     package_data={'django_reusable': ['templates/django_reusable/*']},
     long_description="django-reusable is a collection of common functionality needed in most Django projects.",
     install_requires=[
-        'Django>=2.0'
+        'Django>=2.0',
+        'django-tables2>=1.21.2'
     ],
     classifiers=['Development Status :: 4 - Beta',
                  'Environment :: Web Environment',
