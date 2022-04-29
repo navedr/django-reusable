@@ -75,3 +75,8 @@ def concat_all(*args):
 @register.filter
 def strip_tags(value):
     return strip_tags_util(value)
+
+
+@register.inclusion_tag("django_reusable/dynamic-formset/formset.pug")
+def dynamic_formset(formset, tabular=False, add_button_text=None):
+    return dict(formset=formset, tabular=tabular, add_button_text=add_button_text)

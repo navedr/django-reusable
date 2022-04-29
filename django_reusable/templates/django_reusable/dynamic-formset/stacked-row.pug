@@ -1,0 +1,11 @@
+- load crispy_forms_tags
+
+.row.dynamic-form-row.border.pall.mbm
+  .col-12
+    .clearfix
+        .pull-left
+          h6.serial-no.mtop-5 # {{ forloop.counter }}
+        .pull-right
+          button.btn.btn-sm.btn-danger.remove-form-row(type="button")
+              i.icon-trash.icon-white
+    | {{ form|crispy }}

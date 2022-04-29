@@ -1,0 +1,17 @@
+- load crispy_forms_field
+
+tr.dynamic-form-row
+  td
+    h6.serial-no.mtop-5 # {{ forloop.counter }}
+  for field in form.visible_fields
+    td
+      if forloop.first
+        for hidden in form.hidden_fields
+          | {{ hidden }}
+          | {{ hidden.errors.as_ul }}
+        | {{ form.non_field_errors }}
+      | {{ field.errors.as_ul }}
+      - include 'bootstrap/field.html' with form_show_labels=False
+  td
+    button.btn.btn-sm.btn-danger.remove-form-row(type="button")
+      i.icon-trash.icon-white
