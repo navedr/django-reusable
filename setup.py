@@ -15,7 +15,6 @@ setuptools.setup(
     packages=['django_reusable',
               'django_reusable.templatetags',
               'django_reusable.django_tables2'],
-    package_data={'django_reusable': ['templates/django_reusable/*']},
     include_package_data=True,
     long_description="django-reusable is a collection of common functionality needed in most Django projects.",
     install_requires=[
