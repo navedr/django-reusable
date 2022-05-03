@@ -8,6 +8,9 @@ class TextInputFilter(admin.SimpleListFilter):
         # Dummy, required to show the filter.
         return (('Dummy', 'Dummy'),)
 
+    def queryset(self, request, queryset):
+        return queryset
+
 
 class SearchInFilter(admin.SimpleListFilter):
     title = 'Search In'
