@@ -32,12 +32,14 @@ const emptyFormDataAttr = '[data-empty-form]';
                 if (total < options.maxNum) {
                     addForm();
                 }
+                e.stopPropagation();
                 return false;
             });
 
             $($el).on('click', removeBtnClassName, function (e) {
                 e.preventDefault();
                 deleteForm($(this));
+                e.stopPropagation();
                 return false;
             });
             toggleAddButton();

@@ -21,6 +21,7 @@
       | &nbsp;{{ add_button_text }}
     else
       i.icon-plus.icon-white
+  script(type="text/javascript", src="{% static 'django_reusable/js/dynamic-formsets.js' %}")
   script(type="text/javascript").
     const prefix = '{{ formset.prefix }}';
     $(`.dynamic-formset[data-prefix='${prefix}']`).dynamicFormSet({
