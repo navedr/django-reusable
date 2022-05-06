@@ -19,7 +19,8 @@ setuptools.setup(
     long_description="django-reusable is a collection of common functionality needed in most Django projects.",
     install_requires=[
         'Django>=2.0',
-        'django-tables2>=1.21.2'
+        'django-tables2>=1.21.2',
+        'django-crispy-forms>=1.7.2',
     ],
     classifiers=['Development Status :: 4 - Beta',
                  'Environment :: Web Environment',

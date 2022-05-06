@@ -1,14 +1,18 @@
+import csv
 import json
 import locale
 import math
+import operator
 import os
 import random
 import uuid
 from collections import namedtuple, OrderedDict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
+from django.core.validators import validate_email
 from django.db import connection
 from django.db.models.fields.files import FieldFile
 from django.db.models.fields.files import FileField
@@ -21,7 +25,7 @@ from django.utils import encoding
 from django.utils.encoding import Promise, force_text
 from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView
-
+from pytz import timezone, utc
 
 locale.setlocale(locale.LC_ALL, '')
 
@@ -187,7 +191,7 @@ class CustomEncoder(DjangoJSONEncoder):
             return force_text(o)
         else:
             try:
-                return super(CustomEncoder, self).default(o)
+                return super().default(o)
             except:
                 return force_text(o)
 
@@ -436,6 +440,22 @@ def get_count_dict(iterable, by_property=None):
     return count_dict
 
 
+def get_adjacent_months(month, year, plus=0, minus=0):
+    month = str(int(month)).zfill(2)
+    result = []
+    finder = operator.itemgetter(0)
+    month_index = map(finder, MONTH_NAMES).index(month)
+    for x in range(0, minus):
+        y = minus - x
+        i = month_index - y
+        result.append((int(MONTH_NAMES[i][0]), year if i > 0 else year - 1))
+    result.append((int(month), year))
+    for x in range(0, plus):
+        i = month_index + x + 1
+        result.append((int(MONTH_NAMES[i][0]), year if i < 11 else year + 1))
+    return result
+
+
 def ifilter(fn, iterable):
     return list(filter(fn, iterable))
 
@@ -547,6 +567,80 @@ def group_by_property(iterable, prop=None, prop_fn=None):
 
 def short_uuid():
     return str(uuid.uuid5(uuid.NAMESPACE_DNS, f"django-reusable@{datetime.now()}")).split('-')[-1]
+
+
+def is_valid_email(email):
+    try:
+        validate_email(email)
+        return True
+    except ValidationError:
+        return False
+
+
+def next_weekday(d, weekday):
+    days_ahead = weekday - d.weekday()
+    if days_ahead <= 0:  # Target day already happened this week
+        days_ahead += 7
+    return d + timedelta(days_ahead)
+
+
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
+def last_day_of_month(day: date):
+    next_month = day.replace(day=28) + timedelta(days=4)
+    return next_month - timedelta(days=next_month.day)
+
+
+def get_adj_month_first_day(day: date, for_next=True):
+    if for_next:
+        return last_day_of_month(day) + timedelta(days=1)
+    else:
+        return (day.replace(day=1) - timedelta(days=1)).replace(day=1)
+
+
+def next_element_in_iterable(iterable, curr):
+    if not iterable:
+        return None
+    try:
+        i = iterable.index(curr)
+        return iterable[0 if i == (len(iterable) - 1) else i + 1]
+    except ValueError:
+        return iterable[0]
+
+
+def get_csv_bytes(data):
+    file_path = get_temp_file_path()
+    f = open(file_path, 'w')
+    wr = csv.writer(f, quoting=csv.QUOTE_ALL)
+    wr.writerows(data)
+    f.close()
+    return get_bytes_and_delete(file_path)
+
+
+def get_html_list_from_iterable(iterable, fn, tag='ul'):
+    list_items = ''.join([f'<li>{fn(value)}</li>' for value in iterable])
+    return mark_safe(f'<{tag}>{list_items}</{tag}>')
+
+
+def get_json_bytes(data):
+    def converter(o):
+        if isinstance(o, datetime) or isinstance(o, date):
+            return str(o)
+    file_path = get_temp_file_path()
+    with open(file_path, 'w') as f:
+        f.write(json.dumps(data, default=converter, indent=2))
+    return get_bytes_and_delete(file_path)
+
+
+def get_tz_offset(dt, timezone_name='US/Pacific'):
+    tz = timezone(timezone_name)
+    target_dt = tz.localize(dt)
+    utc_dt = utc.localize(dt)
+    return (utc_dt - target_dt).total_seconds() / 3600
 
 
 def get_absolute_url(path):

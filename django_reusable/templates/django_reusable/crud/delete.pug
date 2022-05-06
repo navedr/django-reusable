@@ -1,0 +1,16 @@
+- extends base_template
+
+block content
+    .card.pull-center.bg-light.card.sj-card(style="margin-top: 50px;")
+        .card-header
+            h3.text-center Delete {{ object_title }}
+        .card-body
+            p.card-text
+                form(method="post")
+                    | {% csrf_token %}
+                    .alert.alert-warning
+                        | Are you sure you want to delete the {{ object_title|lower }}: <strong>{{ object }}</strong>?
+                    .text-center
+                        button.btn.btn-danger.w100percent-xs(type="submit") Delete
+                        | &nbsp;
+                        a.btn.btn-primary.w100percent-xs(href="{% url index_url %}") Cancel

@@ -1,0 +1,15 @@
+- extends base_template
+- load django_tables2
+
+block content
+    .container-fluid.mbm.pl0.pr0.ptop
+        h3.text-center {{ title }}
+        if allow_add or additional_index_links
+            .pull-right.mbm
+                for link in additional_index_links
+                    | {{ link|safe }}
+                if allow_add
+                    a.btn.btn-success.btn-sm(href="{% url add_url %}?reset=") New {{ object_title }}
+
+        .table-responsive
+            - render_table table

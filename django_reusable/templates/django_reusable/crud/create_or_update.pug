@@ -1,0 +1,39 @@
+- extends base_template
+- load crispy_forms_tags django_tables2
+
+block extrahead
+    | {{ form.media }}
+
+block content
+    .card.pull-center.bg-light.card.sj-card(style="margin-top: 50px;")
+        .card-header
+            h3.text-center
+                if object.pk
+                    | Update {{ object_title }}
+                else
+                    | New {{ object_title }}
+        .card-body
+            p.card-text
+                form(method="post")
+                    if object.status
+                        if object.status == 2
+                            .alert.alert-danger Status: <b>{{ object.get_status_display }}</b>
+                        elif object.status != 4
+                            .alert.alert-info Status: <b>{{ object.get_status_display }}</b>
+                        else
+                            .alert.alert-success Status: <b>{{ object.get_status_display }}</b>
+                    | {% csrf_token %}
+                    | {{ form|crispy }}
+                    .text-center
+                        if object.status != 4 and object.status != 2
+                            button.btn.btn-success.w100percent-xs(type="submit") Submit
+                        | &nbsp;
+                        a.btn.btn-danger.w100percent-xs(href="{% url index_url %}") Cancel
+
+    .container
+        .row
+            .col-12
+                for caption, table in additional_tables
+                    h5.text-center {{ caption }}
+                    .table-responsive.mtop
+                        - render_table table

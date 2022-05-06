@@ -1,0 +1,48 @@
+- extends 'main/base.pug'
+- load crispy_forms_tags
+
+block extrahead
+    | {{ wizard.form.media }}
+    style(type="text/css").
+        .helptext {color: #336799; font-weight: bold; font-size: 10pt;}
+        .errorlist {color: firebrick; font-weight: bold; }
+        .form-table ul {padding-left: 5px; font-size: 10pt; margin-top: 5px;}
+
+block content
+    .card.pull-center.bg-light.sj-card(style="margin-top: 50px;")
+        .card-header
+            h3.text-center New {{ object_title }}
+        .card-body
+            .card-text
+                form.signup-form(method="post")
+                    | {% csrf_token %}
+                    | {{ wizard.management_form }}
+                    .progress
+                        .progress-bar.bg-warning(role='progressbar', style='width: {{ complete_percent }}%;', aria-valuenow='{{ complete_percent }}', aria-valuemin='0', aria-valuemax='100') {{ complete_percent }}%
+                    h5.text-center.mtop {{ form.page_title }}
+                    if wizard.steps.current == 'review'
+                        table.table
+                            tbody
+                                for k, v in all_data.items
+                                    tr
+                                        td {{ k }}
+                                        td {{ v }}
+                    if wizard.form.forms
+                        | {{ wizard.form.management_form }}
+                        for form in wizard.form.forms
+                            h6.mt0 # {{ forloop.counter }}
+                            | {{ form|crispy }}
+                    else
+                        | {{ wizard.form|crispy }}
+                    div.clearfix
+                        .pull-right.w100percent-xs
+                            button.btn.btn-success.w100percent-xs.mbm-xs(type='submit')
+                                if wizard.steps.next
+                                    | Next
+                                else
+                                    | Submit
+                        .pull-left.w100percent-xs
+                            if wizard.steps.prev
+                                a.btn.btn-danger.w100percent-xs(href="{% url step_url_name wizard.steps.prev %}") Prev
+                            else
+                                a.btn.btn-danger.w100percent-xs(href="{% url list_url_name %}") Cancel
