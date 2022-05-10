@@ -3,8 +3,9 @@
 
 ### Pre-requisites
 * Django >= 2.2
-* django-tables2>=1.21.2
-* django-crispy-forms>=1.7.2
+* django-tables2 >= 1.21.2
+* django-crispy-forms >= 1.7.2
+* pypugjs >= 5.6.0
 
 ### Installation
 Install this package using pip
