@@ -7,6 +7,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 
+from .admin_utils import remove_from_fieldsets
 from .filters import SearchInFilter
 from .forms import EnhancedBaseInlineFormSet
 from .utils import ifilter
@@ -236,6 +237,25 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
 
     def get_extra_changelist_links(self, request):
         return self.extra_changelist_links
+
+    def get_fieldset_section_exclusions(self, request, obj):
+        return []
+
+    def get_fieldset_field_exclusions(self, request, obj):
+        return []
+
+    def get_fieldsets(self, request, obj=None):
+        original_fieldsets = super().get_fieldsets(request, obj)
+        field_exclusions = self.get_fieldset_field_exclusions(request, obj)
+        section_exclusions = self.get_fieldset_section_exclusions(request, obj)
+        if not field_exclusions and not section_exclusions:
+            return original_fieldsets
+        fieldsets = deepcopy(original_fieldsets)
+        if section_exclusions:
+            fieldsets = [(title, attributes) for title, attributes in fieldsets if title not in section_exclusions]
+        if field_exclusions:
+            remove_from_fieldsets(fieldsets, field_exclusions)
+        return fieldsets
 
 
 class ReadonlyAdmin(admin.ModelAdmin):
