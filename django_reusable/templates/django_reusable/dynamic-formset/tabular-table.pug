@@ -7,4 +7,4 @@ table.table.table-bordered.table-hover.table-condensed.formset-forms
           for field in form.visible_fields
             th {{ field.label|capfirst }}
           th Delete
-    - include 'dynamic-formset/tabular-row.pug' with form=form
+    - include './tabular-row.pug' with form=form

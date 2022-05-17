@@ -5,16 +5,16 @@
   script(type='form-template', data-empty-form='')
     | {% escapescript %}
     if tabular
-      - include 'dynamic-formset/tabular-row.pug' with form=formset.empty_form
+      - include './tabular-row.pug' with form=formset.empty_form
     else
-      - include 'dynamic-formset/stacked-row.pug' with form=formset.empty_form
+      - include './stacked-row.pug' with form=formset.empty_form
     | {% endescapescript %}
   if tabular
-    - include 'dynamic-formset/tabular-table.pug' with formset=formset
+    - include './tabular-table.pug' with formset=formset
   else
     .formset-forms
       for form in formset
-        - include 'dynamic-formset/stacked-row.pug' with form=form
+        - include './stacked-row.pug' with form=form
   button.btn.btn-info.btn-sm.add-form-row
     if add_button_text
       i.icon-plus-sign.icon-white
