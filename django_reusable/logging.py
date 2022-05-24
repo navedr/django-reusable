@@ -14,7 +14,7 @@ class PrintLogger:
         self._log('INFO', *message)
 
     def debug(self, *message):
-        if settings.DEBUG:
+        if settings.DEBUG or getattr(settings, 'PRINT_LOGGER_DEBUG', False):
             self._log('DEBUG', *message)
 
     def warn(self, *message):
