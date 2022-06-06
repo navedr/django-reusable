@@ -110,6 +110,12 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
         (url, dict(link_text, link_class, new_tab, user_passes_test))
     """
     extra_changelist_links = []
+    """
+        List of tuples:
+        ('name', dict(btn_text, btn_class, callback, short_desc))
+        Note: callback is called with args (request, pk)
+    """
+    action_links = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -127,6 +133,21 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
             if len(f) > 2:
                 func.short_description = f[2]
             func.__name__ = f[0]
+            setattr(self, func.__name__, func)
+
+        for name, attrs in self.action_links:
+            if 'callback' not in attrs:
+                continue
+            func = lambda instance: mark_safe(
+                '<a class="btn {0}" href="{1}">{2}</a>'.format(
+                    attrs.get('btn_class', ''),
+                    attrs.get('btn_text', ''),
+                    reverse_lazy(f'{self.model}_action_view_{name}', args=(instance.id,))
+                ))
+            func.allow_tags = True
+            if 'short_desc' in attrs:
+                func.short_description = attrs['short_desc']
+            func.__name__ = name
             setattr(self, func.__name__, func)
 
     def get_search_fields(self, request):
@@ -233,7 +254,9 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
                 inline_instances.remove(inline)
 
     def get_readonly_fields(self, request, obj=None):
-        return list(super().get_readonly_fields(request, obj)) + [x[0] for x in self.custom_fields]
+        return (list(super().get_readonly_fields(request, obj)) +
+                [x[0] for x in self.custom_fields] +
+                [x[0] for x in self.action_links])
 
     def get_extra_changelist_links(self, request):
         return self.extra_changelist_links
@@ -256,6 +279,15 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
         if field_exclusions:
             remove_from_fieldsets(fieldsets, field_exclusions)
         return fieldsets
+
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            path(f'<path:pk>/action-link/{name}/', self.admin_site.admin_view(attrs['callback']),
+                 name=f'{self.model}_action_view_{name}')
+            for (name, attrs) in self.action_links if 'callback' in attrs
+        ]
+        return my_urls + urls
 
 
 class ReadonlyAdmin(admin.ModelAdmin):
