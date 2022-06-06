@@ -4,7 +4,8 @@ from django.contrib import admin, messages
 from django.contrib.admin.options import BaseModelAdmin, InlineModelAdmin
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
-from django.urls import reverse
+from django.shortcuts import redirect
+from django.urls import reverse, reverse_lazy, path
 from django.utils.safestring import mark_safe
 
 from .admin_utils import remove_from_fieldsets
@@ -113,7 +114,7 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
     """
         List of tuples:
         ('name', dict(btn_text, btn_class, callback, short_desc))
-        Note: callback is called with args (request, pk)
+        Note: callback is called with args (request, instance)
     """
     action_links = []
 
@@ -141,8 +142,9 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
             func = lambda instance: mark_safe(
                 '<a class="btn {0}" href="{1}">{2}</a>'.format(
                     attrs.get('btn_class', ''),
+                    reverse(f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_action_view_{name}',
+                            args=(instance.id,)),
                     attrs.get('btn_text', ''),
-                    reverse_lazy(f'{self.model}_action_view_{name}', args=(instance.id,))
                 ))
             func.allow_tags = True
             if 'short_desc' in attrs:
@@ -282,11 +284,21 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
 
     def get_urls(self):
         urls = super().get_urls()
-        my_urls = [
-            path(f'<path:pk>/action-link/{name}/', self.admin_site.admin_view(attrs['callback']),
-                 name=f'{self.model}_action_view_{name}')
-            for (name, attrs) in self.action_links if 'callback' in attrs
-        ]
+        my_urls = []
+
+        for (name, attrs) in self.action_links:
+            if 'callback' not in attrs:
+                continue
+            view_name = f'{self.model._meta.app_label}_{self.model._meta.model_name}_action_view_{name}'
+
+            def action_link_view(request, pk):
+                obj = self.model.objects.get(id=pk)
+                attrs['callback'](obj)
+                return redirect(request.META.get('HTTP_REFERER'))
+
+            action_link_view.__name__ = view_name
+            my_urls.append(path(f'<path:pk>/action-link/{name}/', self.admin_site.admin_view(action_link_view),
+                                name=view_name))
         return my_urls + urls
 
 
