@@ -136,9 +136,7 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
             func.__name__ = f[0]
             setattr(self, func.__name__, func)
 
-        for name, attrs in self.action_links:
-            if 'callback' not in attrs:
-                continue
+        def get_action_link_fn(name, attrs):
             func = lambda instance: mark_safe(
                 '<a class="btn {0}" href="{1}">{2}</a>'.format(
                     attrs.get('btn_class', ''),
@@ -150,6 +148,12 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
             if 'short_desc' in attrs:
                 func.short_description = attrs['short_desc']
             func.__name__ = name
+            return func
+
+        for name, attrs in self.action_links:
+            if 'callback' not in attrs:
+                continue
+            func = get_action_link_fn(name, attrs)
             setattr(self, func.__name__, func)
 
     def get_search_fields(self, request):
@@ -286,18 +290,22 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
         urls = super().get_urls()
         my_urls = []
 
+        def get_action_link_view(_view_name, _attrs):
+            def action_link_view(request, pk):
+                obj = self.model.objects.get(id=pk)
+                _attrs['callback'](obj)
+                return redirect(request.META.get('HTTP_REFERER'))
+
+            action_link_view.__name__ = _view_name
+            return action_link_view
+
         for (name, attrs) in self.action_links:
             if 'callback' not in attrs:
                 continue
             view_name = f'{self.model._meta.app_label}_{self.model._meta.model_name}_action_view_{name}'
 
-            def action_link_view(request, pk):
-                obj = self.model.objects.get(id=pk)
-                attrs['callback'](obj)
-                return redirect(request.META.get('HTTP_REFERER'))
-
-            action_link_view.__name__ = view_name
-            my_urls.append(path(f'<path:pk>/action-link/{name}/', self.admin_site.admin_view(action_link_view),
+            my_urls.append(path(f'<path:pk>/action-link/{name}/',
+                                self.admin_site.admin_view(get_action_link_view(view_name, attrs)),
                                 name=view_name))
         return my_urls + urls
 
