@@ -108,8 +108,8 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                 messages.info(self.request, f"{cls.object_title} '{self.object}' has been updated!")
                 return response
 
-            def check_permissions(self, request):
-                has_perm = super().check_permissions(request)
+            def test_func(self):
+                has_perm = super().test_func()
                 if has_perm:
                     record = list_view_instance.get_queryset().filter(id=self.kwargs['pk']).first()
                     return record and cls.allow_edit_for_record(record)
@@ -118,8 +118,8 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
         class CRUDDeleteView(ViewCommon, DeleteView):
             template_name = 'django_reusable/crud/delete.pug'
 
-            def check_permissions(self, request):
-                has_perm = super().check_permissions(request)
+            def test_func(self):
+                has_perm = super().test_func()
                 if has_perm:
                     record = list_view_instance.get_queryset().filter(id=self.kwargs['pk']).first()
                     return record and cls.allow_delete_for_record(record)
