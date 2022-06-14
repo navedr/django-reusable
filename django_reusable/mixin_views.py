@@ -111,11 +111,19 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
             def check_permissions(self, request):
                 has_perm = super().check_permissions(request)
                 if has_perm:
-                    return list_view_instance.get_queryset().filter(id=self.kwargs['pk']).exists()
+                    record = list_view_instance.get_queryset().filter(id=self.kwargs['pk']).first()
+                    return record and cls.allow_edit_for_record(record)
                 return has_perm
 
         class CRUDDeleteView(ViewCommon, DeleteView):
             template_name = 'django_reusable/crud/delete.pug'
+
+            def check_permissions(self, request):
+                has_perm = super().check_permissions(request)
+                if has_perm:
+                    record = list_view_instance.get_queryset().filter(id=self.kwargs['pk']).first()
+                    return record and cls.allow_delete_for_record(record)
+                return has_perm
 
             def delete(self, request, *args, **kwargs):
                 response = super().delete(request, *args, **kwargs)
@@ -177,6 +185,7 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                     step_url_name=step_url_name,
                     object_title=cls.object_title,
                     list_url_name=cls.get_list_url_name(),
+                    base_template=cls.base_template,
                     complete_percent=int(round(current_form_index * 100 / len(list(self.get_form_list().keys())), 0))
                 )
                 return context_data
@@ -254,17 +263,21 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                                 verbose_name='',
                                 attrs={'a': {'class': 'btn btn-sm btn-danger'}})
 
-    def get_allow_edit(self):
-        return self.allow_edit
+    @classmethod
+    def get_allow_edit(cls):
+        return cls.allow_edit
 
-    def get_allow_delete(self):
-        return self.allow_delete
+    @classmethod
+    def get_allow_delete(cls):
+        return cls.allow_delete
 
-    def allow_delete_for_record(self, record):
-        return self.get_allow_delete()
+    @classmethod
+    def allow_delete_for_record(cls, record):
+        return cls.get_allow_delete()
 
-    def allow_edit_for_record(self, record):
-        return self.get_allow_edit()
+    @classmethod
+    def allow_edit_for_record(cls, record):
+        return cls.get_allow_edit()
 
     def get_allow_add(self):
         return self.allow_add

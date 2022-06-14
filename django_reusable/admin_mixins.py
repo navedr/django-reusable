@@ -5,7 +5,7 @@ from django.contrib.admin.options import BaseModelAdmin, InlineModelAdmin
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect
-from django.urls import reverse, reverse_lazy, path
+from django.urls import reverse, path
 from django.utils.safestring import mark_safe
 
 from .admin_utils import remove_from_fieldsets
