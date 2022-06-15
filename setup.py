@@ -1,8 +1,12 @@
 import setuptools
+import sys
 
 version = float(open('version.txt', 'r').read())
-version = round(version + 0.1, 1)
-open('version.txt', 'w').write(str(version))
+if 'increment_version' in sys.argv:
+    version = round(version + 0.1, 1)
+    print('incrementing version to', version)
+    open('version.txt', 'w').write(str(version))
+    sys.argv.remove('increment_version')
 
 setuptools.setup(
     name='django-reusable',
