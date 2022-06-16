@@ -92,7 +92,7 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
             def get_context_data(self, **kwargs):
                 context_data = super().get_context_data(**kwargs) or {}
                 context_data.update(
-                    additional_tables=cls.get_edit_view_tables(self.object)
+                    additional_tables=list_view_instance.get_edit_view_tables(self.object)
                 )
                 return context_data
 
@@ -111,9 +111,16 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
             def test_func(self):
                 has_perm = super().test_func()
                 if has_perm:
-                    record = list_view_instance.get_queryset().filter(id=self.kwargs['pk']).first()
-                    return record and cls.allow_edit_for_record(record)
+                    return list_view_instance.get_queryset().filter(id=self.kwargs['pk']).exists()
                 return has_perm
+
+            def get_context_data(self, **kwargs):
+                context_data = super().get_context_data(**kwargs) or {}
+                record = list_view_instance.get_queryset().filter(id=self.kwargs['pk']).first()
+                context_data.update(
+                    disable_submit=not list_view_instance.allow_edit_for_record(record)
+                )
+                return context_data
 
         class CRUDDeleteView(ViewCommon, DeleteView):
             template_name = 'django_reusable/crud/delete.pug'
@@ -122,7 +129,7 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                 has_perm = super().test_func()
                 if has_perm:
                     record = list_view_instance.get_queryset().filter(id=self.kwargs['pk']).first()
-                    return record and cls.allow_delete_for_record(record)
+                    return record and list_view_instance.allow_delete_for_record(record)
                 return has_perm
 
             def delete(self, request, *args, **kwargs):
@@ -221,8 +228,7 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
     def get_table_kwargs(self):
         kwargs = super().get_table_kwargs() or {}
         extra_columns = self.get_extra_table_columns()
-        if self.get_allow_edit():
-            extra_columns.append(('edit', self._get_edit_link_column()))
+        extra_columns.append(('edit', self._get_edit_link_column()))
         if self.get_allow_delete():
             extra_columns.append(('delete', self._get_delete_link_column()))
         kwargs.update(
@@ -234,19 +240,11 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
         return kwargs
 
     def _get_edit_link_column(self):
-        crud = self
-
-        class EditLinkColumn(LinkColumn):
-            def render(self, value, record, bound_column):
-                if crud.allow_edit_for_record(record):
-                    return super().render(value, record, bound_column)
-                return ''
-
-        return EditLinkColumn(viewname=self.get_edit_url_name(),
-                              text=mark_safe('<i class="fa fa-edit"></i>'),
-                              args=[A('pk')],
-                              verbose_name='',
-                              attrs={'a': {'class': 'btn btn-sm btn-primary'}})
+        return LinkColumn(viewname=self.get_edit_url_name(),
+                          text=mark_safe('<i class="fa fa-edit"></i>'),
+                          args=[A('pk')],
+                          verbose_name='',
+                          attrs={'a': {'class': 'btn btn-sm btn-primary'}})
 
     def _get_delete_link_column(self):
         crud = self
@@ -263,21 +261,17 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                                 verbose_name='',
                                 attrs={'a': {'class': 'btn btn-sm btn-danger'}})
 
-    @classmethod
-    def get_allow_edit(cls):
-        return cls.allow_edit
+    def get_allow_edit(self):
+        return self.allow_edit
 
-    @classmethod
-    def get_allow_delete(cls):
-        return cls.allow_delete
+    def get_allow_delete(self):
+        return self.allow_delete
 
-    @classmethod
-    def allow_delete_for_record(cls, record):
-        return cls.get_allow_delete()
+    def allow_delete_for_record(self, record):
+        return self.get_allow_delete()
 
-    @classmethod
-    def allow_edit_for_record(cls, record):
-        return cls.get_allow_edit()
+    def allow_edit_for_record(self, record):
+        return self.get_allow_edit()
 
     def get_allow_add(self):
         return self.allow_add
@@ -302,8 +296,7 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
 
         return CRUDViewTable
 
-    @classmethod
-    def get_edit_view_tables(cls, record):
+    def get_edit_view_tables(self, record):
         return []
 
     def get_additional_index_links(self):

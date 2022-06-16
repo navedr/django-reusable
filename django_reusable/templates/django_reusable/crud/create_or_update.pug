@@ -25,7 +25,7 @@ block content
                     | {% csrf_token %}
                     | {{ form|crispy }}
                     .text-center
-                        if object.status != 4 and object.status != 2
+                        if object.status != 4 and object.status != 2 and not disable_submit
                             button.btn.btn-success.w100percent-xs(type="submit") Submit
                         | &nbsp;
                         a.btn.btn-danger.w100percent-xs(href="{% url index_url %}") Cancel
