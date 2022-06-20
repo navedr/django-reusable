@@ -122,6 +122,14 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                 )
                 return context_data
 
+            def post(self, request, *args, **kwargs):
+                obj = self.get_object()
+                can_edit = list_view_instance.allow_edit_for_record(obj)
+                if not can_edit:
+                    messages.error(request, f'You cannot edit {obj}')
+                    return super().get(request, *args, **kwargs)
+                return super().post(request, *args, **kwargs)
+
         class CRUDDeleteView(ViewCommon, DeleteView):
             template_name = 'django_reusable/crud/delete.pug'
 
