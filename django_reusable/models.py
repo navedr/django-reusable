@@ -75,6 +75,9 @@ class ModelUtilsMixin:
     def get_change_url(cls, pk, site='admin'):
         return reverse(cls.get_change_url_name(site), args=[pk])
 
+    def get_obj_change_link_tag(self, text, css_class='', target='', site='admin'):
+        return f'<a target="{target}" class="{css_class}" href="{self.get_obj_change_url(site)}">{text}</a>'
+
     def get_obj_change_url(self, site='admin'):
         return self.__class__.get_change_url(self.pk, site)
 
