@@ -1,9 +1,11 @@
 import threading
-from urllib.parse import quote_plus
 from re import compile
+from urllib.parse import quote_plus
 
-from django.http import HttpResponseRedirect
 from django.conf import settings
+from django.http import HttpResponseRedirect
+
+from django_reusable.error_tracker import ErrorTracker
 
 try:
     from django.utils.deprecation import MiddlewareMixin
@@ -70,3 +72,24 @@ class CRequestMiddleware(MiddlewareMixin):
         """
         cls._requests.pop(threading.current_thread(), None)
 
+
+class ExceptionTrackerMiddleware(ErrorTracker):
+    """
+    Error tracker middleware that's invoked in the case of exception occurs,
+    this should be placed at the end of Middleware lists
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        return self.get_response(request)
+
+    def process_exception(self, request, exception):
+        if exception is None:
+            return
+        self.capture_exception(request, exception)
+
+
+# use this object to track errors in the case of custom failures, where try/except is used
+error_tracker = ErrorTracker()

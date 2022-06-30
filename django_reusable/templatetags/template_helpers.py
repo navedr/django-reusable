@@ -80,3 +80,8 @@ def strip_tags(value):
 @register.inclusion_tag("django_reusable/dynamic-formset/formset.pug")
 def dynamic_formset(formset, tabular=False, add_button_text=None):
     return dict(formset=formset, tabular=tabular, add_button_text=add_button_text)
+
+
+@register.filter
+def replace_new_line_with_br(value):
+    return value.replace("\n", "<br/>")

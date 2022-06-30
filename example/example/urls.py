@@ -19,5 +19,6 @@ from django.urls import path, include
 
 urlpatterns = [
     url(r'^company-pages/', include('company.urls')),
+    url(r'^reusable/', include('django_reusable.urls')),
     path('', admin.site.urls),
 ]

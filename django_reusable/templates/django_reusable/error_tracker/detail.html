@@ -1,0 +1,140 @@
+{% extends 'admin/base.html' %}
+{% load template_helpers %}
+{% block content %}
+    <style>
+        table tbody tr td:first-child {
+            font-weight: bold;
+        }
+
+        hr {
+            margin-top: 10px !important;
+            margin-bottom: 10px !important;
+        }
+
+        .row {
+            border: 1px #eee solid;
+            padding: 10px 15px;
+        }
+
+        pre {
+            outline: 1px solid #ccc;
+            padding: 5px;
+            margin: 5px;
+            background-color: whitesmoke;
+        }
+
+        .string {
+            color: green;
+        }
+
+        .number {
+            color: darkorange;
+        }
+
+        .boolean {
+            color: blue;
+        }
+
+        .null {
+            color: magenta;
+        }
+
+        .key {
+            color: red;
+        }
+    </style>
+    <script>
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                var cls = 'number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'key';
+                    } else {
+                        cls = 'string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        $(document).ready(function () {
+            const requestData = $("#request-data").text();
+            $("#request-data").html(syntaxHighlight(requestData))
+        });
+    </script>
+
+    <div class="row">
+        <div class="clearfix">
+            <div class="pull-left">
+                <h2>Error: {{ obj.exception_name }}</h2>
+            </div>
+            <div class="pull-right" style="margin-bottom: 10px;">
+                <a href="{% url 'delete_error' rhash=obj.hash %}" onclick="return confirm('Are you sure?')"
+                   class="delete btn btn-danger btn-sm">Delete</a>
+                <a href="{% url 'view_errors' %}" class="btn btn-info">Back</a>
+            </div>
+        </div>
+        <table class="table table-bordered">
+            <tbody>
+            <tr>
+                <td>URL</td>
+                <td>{{ obj.host }}{{ obj.path }}</td>
+            </tr>
+            <tr>
+                <td>Method</td>
+                <td>{{ obj.method }}</td>
+            </tr>
+            <tr>
+                <td>Exception</td>
+                <td>{{ obj.exception_name }}</td>
+            </tr>
+            <tr>
+                <td>First time seen</td>
+                <td>{{ obj.created_on }}</td>
+            </tr>
+            <tr>
+                <td>Last seen</td>
+                <td>{{ obj.last_seen }}</td>
+            </tr>
+            <tr>
+                <td>Occurrences</td>
+                <td>{{ obj.count }}</td>
+            </tr>
+            <tr>
+                <td>Request data</td>
+                <td>
+                    <pre id="request-data">{{ obj.request_data_json }}</pre>
+                </td>
+            </tr>
+            <tr>
+                <td>Exception detail</td>
+                <td>
+                    <pre>{{ obj.traceback|escape|replace_new_line_with_br|safe }}</pre>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <div style="display: none">
+            <p><strong>URL:</strong>{{ obj.host }}{{ obj.path }}</p>
+            <hr/>
+            <p><strong>Method: </strong>{{ obj.method }}</p>
+            <hr/>
+            <p><strong>First time seen: </strong>{{ obj.created_on }}</p>
+            <hr/>
+            <p><strong>Last seen: </strong>{{ obj.last_seen }}</p>
+            <hr/>
+            <p><strong>Occurrences: </strong>{{ obj.count }}</p>
+            <hr/>
+            <div><strong>Request data: </strong>{{ obj.request_data }}</div>
+            <hr/>
+            <div><strong>Exception detail: </strong><br/>
+                {{ obj.traceback|escape|replace_new_line_with_br|safe }}</div>
+        </div>
+    </div>
+{% endblock %}

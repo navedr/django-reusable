@@ -1,9 +1,15 @@
+import abc
+import json
 import traceback
+from ast import literal_eval
+from collections import namedtuple
 
 from django.contrib.contenttypes.models import ContentType
+from django.core.paginator import Paginator, EmptyPage
 from django.db import models
 from django.urls import NoReverseMatch, reverse
 from django.utils.safestring import mark_safe
+from django.utils.timezone import now
 
 from django_reusable.utils import get_property
 
@@ -152,3 +158,67 @@ class MonitorChangeMixin:
 class TimeStampedModel(TimeStampedModelOnly, MonitorChangeMixin):
     class Meta:
         abstract = True
+
+
+Page = namedtuple("Page", "has_next, next_num, has_prev, prev_num, items ")
+
+
+class Error(models.Model):
+    hash = models.CharField(max_length=64, primary_key=True)
+    host = models.CharField(max_length=1024)
+    path = models.CharField(max_length=4096)
+    method = models.CharField(max_length=64)
+    request_data = models.TextField()
+    exception_name = models.CharField(max_length=256)
+    traceback = models.TextField()
+    count = models.IntegerField(default=0)
+    created_on = models.DateTimeField(auto_now=True)
+    last_seen = models.DateTimeField(auto_now=True, db_index=True)
+
+    @property
+    def request_data_json(self):
+        return json.dumps(literal_eval(self.request_data), indent=4)
+
+    @classmethod
+    def get_exceptions_per_page(cls, page_number=1):
+        records = cls.objects.all().order_by('last_seen')
+        paginator = Paginator(records, 25)
+        try:
+            page = paginator.page(page_number)
+            return Page(page.has_next(),
+                        page.next_page_number() if page.has_next() else None,
+                        page.has_previous(),
+                        page.previous_page_number() if page.has_previous() else None,
+                        page.object_list)
+        except EmptyPage:
+            return Page(False, None, True, paginator.num_pages, [])
+
+    @classmethod
+    def get_entity(cls, rhash):
+        return cls.objects.get(pk=rhash)
+
+    @classmethod
+    def create_or_update_entity(cls, rhash, host, path, method, request_data, exception_name, _traceback):
+        try:
+            obj, created = cls.objects.get_or_create(hash=rhash)
+            if created:
+                obj.host, obj.path, obj.method, obj.request_data, obj.exception_name, obj.traceback = \
+                    host, path, method, request_data, exception_name, _traceback
+                obj.count = 1
+                obj.save()
+            else:
+                obj.count += 1
+                obj.last_seen = now()
+                obj.save(update_fields=['count', 'last_seen'])
+        except:
+            traceback.print_exc()
+
+    @classmethod
+    def delete_entity(cls, rhash):
+        return cls.objects.filter(pk=rhash).delete()
+
+    def __str__(self):
+        return "'%s' '%s' %s" % (self.host, self.path, self.count)
+
+    def __unicode__(self):
+        return self.__str__()
