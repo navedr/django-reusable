@@ -20,9 +20,9 @@ def view_list(request):
         page = 1
     error = False
     errors = Error.get_exceptions_per_page(page_number=page)
-    next_url = reverse('view_errors') + "?page=" + str(errors.next_num) \
+    next_url = reverse('django_reusable:errors') + "?page=" + str(errors.next_num) \
         if errors.has_next else None
-    prev_url = reverse('view_errors') + "?page=" + str(errors.prev_num) \
+    prev_url = reverse('django_reusable:errors') + "?page=" + str(errors.prev_num) \
         if errors.has_prev else None
 
     return render(request, template_name='django_reusable/error_tracker/list.html',
@@ -39,7 +39,7 @@ def delete_exception(request, rhash):
     :return: redirect back to home page
     """
     Error.delete_entity(rhash)
-    return redirect(reverse('view_errors'))
+    return redirect(reverse('django_reusable:errors'))
 
 
 @require_GET

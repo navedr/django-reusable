@@ -181,7 +181,7 @@ class Error(models.Model):
 
     @classmethod
     def get_exceptions_per_page(cls, page_number=1):
-        records = cls.objects.all().order_by('last_seen')
+        records = cls.objects.all()
         paginator = Paginator(records, 25)
         try:
             page = paginator.page(page_number)
@@ -222,3 +222,6 @@ class Error(models.Model):
 
     def __unicode__(self):
         return self.__str__()
+
+    class Meta:
+        ordering = ['-last_seen']

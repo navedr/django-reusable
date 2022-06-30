@@ -75,9 +75,9 @@
                 <h2>Error: {{ obj.exception_name }}</h2>
             </div>
             <div class="pull-right" style="margin-bottom: 10px;">
-                <a href="{% url 'delete_error' rhash=obj.hash %}" onclick="return confirm('Are you sure?')"
+                <a href="{% url 'django_reusable:delete_error' rhash=obj.hash %}" onclick="return confirm('Are you sure?')"
                    class="delete btn btn-danger btn-sm">Delete</a>
-                <a href="{% url 'view_errors' %}" class="btn btn-info">Back</a>
+                <a href="{% url 'django_reusable:errors' %}" class="btn btn-info">Back</a>
             </div>
         </div>
         <table class="table table-bordered">

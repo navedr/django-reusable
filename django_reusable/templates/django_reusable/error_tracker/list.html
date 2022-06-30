@@ -22,7 +22,7 @@
                     <td>{{ error.host }}</td>
                     <td>{{ error.method }}</td>
                     <td>
-                        <a class="view-link" href="{% url 'view_error' rhash=error.hash %}">
+                        <a class="view-link" href="{% url 'django_reusable:view_error' rhash=error.hash %}">
                             {{ error.path|truncatechars:50 }}
                         </a>
                     </td>
@@ -30,7 +30,7 @@
                     <td>{{ error.last_seen }}</td>
                     <td>{{ error.count }}</td>
                     <td>
-                        <a href="{% url 'delete_error' rhash=error.hash %}" onclick="return confirm('Are you sure?')"
+                        <a href="{% url 'django_reusable:delete_error' rhash=error.hash %}" onclick="return confirm('Are you sure?')"
                            class="delete btn btn-danger btn-sm">Delete</a>
                     </td>
                 </tr>

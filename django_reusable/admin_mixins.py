@@ -81,7 +81,7 @@ class AjaxActionMixin:
             def func(instance):
                 if not instance.id:
                     return ''
-                url = reverse('ajax_callback_handler',
+                url = reverse('django_reusable:ajax_callback_handler',
                               args=(instance.pk, self.get_callback_key(name)))
                 return (f'<button class="{btn_class} ajax-action-btn" data-url="{url}">{btn_text}</button>' +
                         config.get('additional_html', ''))

@@ -11,7 +11,6 @@ import six
 from django.http import QueryDict, RawPostDataException
 
 from .logging import PrintLogger
-from .models import Error
 
 
 def format_frame(x, max_elements, max_string, max_recursion, masking=None):
@@ -320,7 +319,7 @@ class ErrorTracker(object):
             ty, frames, frame_str, traceback_str, rhash, request_data = \
                 get_context_detail(request, None, DefaultDjangoContextBuilder(),
                                    additional_context=additional_context)
-
+            from .models import Error
             error = Error.create_or_update_entity(rhash,
                                                   host,
                                                   path,
