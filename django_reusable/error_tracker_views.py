@@ -1,12 +1,15 @@
+from django.contrib.auth.decorators import user_passes_test
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET
 
 from .models import Error
+from .user_utils import is_superuser
 
 
 @require_GET
+@user_passes_test(is_superuser)
 def view_list(request):
     """
     Home page that lists mose recent exceptions
@@ -27,10 +30,11 @@ def view_list(request):
 
     return render(request, template_name='django_reusable/error_tracker/list.html',
                   context=dict(error=error, title=title, errors=errors,
-                               next_url=next_url, prev_url=prev_url))
+                               next_url=next_url, prev_url=prev_url, request=request))
 
 
 @require_GET
+@user_passes_test(is_superuser)
 def delete_exception(request, rhash):
     """
     Delete an exceptions
@@ -43,6 +47,7 @@ def delete_exception(request, rhash):
 
 
 @require_GET
+@user_passes_test(is_superuser)
 def detail(request, rhash):
     """
     Display a specific page of the exception
@@ -56,4 +61,4 @@ def detail(request, rhash):
         raise Http404
     title = "%s : %s" % (obj.method, obj.path)
     return render(request, template_name='django_reusable/error_tracker/detail.html',
-                  context=dict(error=error, title=title, obj=obj))
+                  context=dict(error=error, title=title, obj=obj, request=request))

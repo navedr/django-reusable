@@ -52,3 +52,7 @@ def get_users_for_perms(perms):
             for group in permission.group_set.all():
                 users.update(list(group.user_set.all()))
     return list(users)
+
+
+def is_superuser(user):
+    return user.is_active and user.is_staff and user.is_superuser
