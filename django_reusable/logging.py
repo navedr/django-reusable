@@ -8,7 +8,8 @@ class PrintLogger:
         self.name = name
 
     def _log(self, level, *message):
-        print(f'{datetime.now()} [{level}]{" "*4} {self.name}:', *message)
+        msg = ' '.join([str(m) for m in message])
+        print(f'{datetime.now()} [{level}]{" "*4} {self.name}: {msg}')
 
     def info(self, *message):
         self._log('INFO', *message)

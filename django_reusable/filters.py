@@ -2,7 +2,7 @@ from django.contrib import admin
 
 
 class TextInputFilter(admin.SimpleListFilter):
-    template = 'django_reusable/filters/input-filter.pug'
+    template = 'django_reusable/filters/input-filter.html'
 
     def lookups(self, request, model_admin):
         # Dummy, required to show the filter.
