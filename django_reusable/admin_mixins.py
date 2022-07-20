@@ -113,8 +113,8 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
     extra_changelist_links = []
     """
         List of tuples:
-        ('name', dict(btn_text, btn_class, callback, short_desc))
-        Note: callback is called with args (request, instance)
+        ('name', dict(btn_text, btn_class, callback, short_desc, custom_redirect))
+        Note: callback is called with args (instance)
     """
     action_links = []
 
@@ -293,7 +293,9 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
         def get_action_link_view(_view_name, _attrs):
             def action_link_view(request, pk):
                 obj = self.model.objects.get(id=pk)
-                _attrs['callback'](obj)
+                response = _attrs['callback'](obj)
+                if _attrs.get('custom_redirect'):
+                    return response
                 return redirect(request.META.get('HTTP_REFERER'))
 
             action_link_view.__name__ = _view_name
