@@ -9,7 +9,12 @@ class PrintLogger:
 
     def _log(self, level, *message):
         msg = ' '.join([str(m) for m in message])
-        print(f'{datetime.now()} [{level}]{" "*4} {self.name}: {msg}')
+        to_write = f'{datetime.now()} [{level}]{" "*4} {self.name}: {msg}'
+        if getattr(settings, 'REUSABLE_PRINT_LOGGER_FILE_PATH', None):
+            with open(settings.REUSABLE_PRINT_LOGGER_FILE_PATH, 'w') as f:
+                print(to_write, file=f)
+        else:
+            print(to_write)
 
     def info(self, *message):
         self._log('INFO', *message)
