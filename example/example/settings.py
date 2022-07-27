@@ -134,3 +134,5 @@ LOGIN_URL = '/login/'
 STATIC_URL = '/static/'
 
 REUSABLE_SHOW_ERRORS_LINK = True
+REUSABLE_ENABLE_SUIT_MULTI_ADMIN = True
+REUSABLE_SHOW_ERRORS_PERM = lambda user: user.is_superuser

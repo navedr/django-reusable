@@ -126,3 +126,13 @@ def suit_multi_admin():
         self.conf_menu_extras = get_config('MENU_EXTRAS', config_key)
 
     suit_menu.Menu.init_config = patched_init_config
+
+    original_app_is_forbidden = suit_menu.Menu.app_is_forbidden
+
+    def patched_is_forbidden(self, entity):
+        if entity['permissions'] and callable(entity['permissions']):
+            return not entity['permissions'](self.request.user)
+        return original_app_is_forbidden(self, entity)
+
+    suit_menu.Menu.app_is_forbidden = patched_is_forbidden
+    suit_menu.Menu.model_is_forbidden = patched_is_forbidden
