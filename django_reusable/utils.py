@@ -538,3 +538,7 @@ def get_absolute_url(path):
     host = getattr(settings, 'CURRENT_HOST', None) or f'{scheme}://{current_host}'
     absolute_url = host + path
     return absolute_url
+
+
+def pick(input_dict: dict, keys_to_pick: []):
+    return dict((k, v) for (k, v) in input_dict.items() if k in keys_to_pick)
