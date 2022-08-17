@@ -542,3 +542,7 @@ def get_absolute_url(path):
 
 def pick(input_dict: dict, keys_to_pick: []):
     return dict((k, v) for (k, v) in input_dict.items() if k in keys_to_pick)
+
+
+def omit(input_dict: dict, keys_to_omit: []):
+    return dict((k, v) for (k, v) in input_dict.items() if k not in keys_to_omit)
