@@ -37,11 +37,15 @@ class ReadonlySelect(forms.Select):
         return f'''{text or '---'}<input name="{name}" value="{value}" type="hidden" />'''
 
 
-class ReadonlyMultiSelect(forms.Select):
+class ReadonlyMultiSelect(forms.SelectMultiple):
     def render(self, name, value, attrs=None, renderer=None):
-        matches = [t for (v, t) in self.choices if v in value]
+        value_list = value if isinstance(value, list) or isinstance(value, tuple) else eval(value)
+        matches = [t for (v, t) in self.choices if v in value_list]
         text = ', '.join(matches) if matches else None
-        return f'''{text or '---'}<input name="{name}" value="{value}" type="hidden" />'''
+        attrs = attrs or {}
+        attrs['style'] = 'display: none;'
+        default_widget = super().render(name, value, attrs, renderer)
+        return f'''{text or '---'}{default_widget}'''
 
 
 class ReadOnlyInput(forms.TextInput):
