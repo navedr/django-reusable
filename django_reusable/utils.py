@@ -337,7 +337,7 @@ def format_as_currency(value, decimal_precision=2, currency_symbol='$'):
         return value
     value = float(value)
     is_negative = value < 0
-    display_format = f'<span class="text-danger">{currency_symbol}(%s)</span>' if is_negative else f'{currency_symbol}%s'
+    display_format = f'<span class="text-danger">({currency_symbol}%s)</span>' if is_negative else f'{currency_symbol}%s'
     decimal_precision = decimal_precision if is_int(decimal_precision) and decimal_precision >= 0 else 2
     return mark_safe(display_format % ('%s' % ('{:20,.%sf}' % decimal_precision).format(math.fabs(value)).strip()))
 
