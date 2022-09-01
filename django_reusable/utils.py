@@ -330,16 +330,16 @@ def get_pdf_response_from_file(pdf, file_name):
     return response
 
 
-def format_as_currency(value, decimal_precision=2):
+def format_as_currency(value, decimal_precision=2, currency_symbol='$'):
     if value is None:
         return value
     if not is_number(value):
         return value
     value = float(value)
     is_negative = value < 0
-    display_format = '<span class="text-danger">(%s)</span>' if is_negative else '%s'
+    display_format = f'<span class="text-danger">{currency_symbol}(%s)</span>' if is_negative else f'{currency_symbol}%s'
     decimal_precision = decimal_precision if is_int(decimal_precision) and decimal_precision >= 0 else 2
-    return mark_safe(display_format % ('$%s' % ('{:20,.%sf}' % decimal_precision).format(math.fabs(value)).strip()))
+    return mark_safe(display_format % ('%s' % ('{:20,.%sf}' % decimal_precision).format(math.fabs(value)).strip()))
 
 
 def list_to_table(data, table_class='', has_header=False):
