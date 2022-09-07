@@ -9,7 +9,23 @@ from django_reusable.utils import global_request, humane_currency, format_as_cur
 from django_reusable.widgets import ReadOnlyInput
 
 
-class TextFieldColumn(Column):
+class EnhancedColumn(Column):
+    def __init__(self, new_row_index: int = None, colspan: int = None, *args, **kwargs):
+        self.new_row_index = new_row_index
+        super().__init__(*args, **kwargs)
+        if colspan:
+            td_attrs = self.attrs.get('td', {})
+            td_attrs['colspan'] = colspan
+            self.attrs['td'] = td_attrs
+        if self.has_new_row_index:
+            self.visible = False
+
+    @property
+    def has_new_row_index(self):
+        return self.new_row_index is not None and self.new_row_index > 0
+
+
+class TextFieldColumn(EnhancedColumn):
     empty_values = []
 
     def render(self, value):
@@ -58,7 +74,7 @@ class RadioButtonColumn(DefaultCheckBoxColumn):
         return mark_safe("<input %s/>" % attrs.as_html())
 
 
-class ChoiceColumn(Column):
+class ChoiceColumn(EnhancedColumn):
     empty_values = []
 
     def __init__(self, choices, widget=forms.Select, css_class='form-control', *args, **kwargs):
@@ -73,7 +89,7 @@ class ChoiceColumn(Column):
         return ff.widget.render(self.verbose_name, value)
 
 
-class CounterColumn(Column):
+class CounterColumn(EnhancedColumn):
     empty_values = []
 
     def __init__(self, start=0, *args, **kwargs):
@@ -94,7 +110,7 @@ def add_class(attrs, element, css_class):
     attrs[element] = el
 
 
-class NumberColumn(Column):
+class NumberColumn(EnhancedColumn):
     def __init__(self, *args, **kwargs):
         attrs = kwargs.get('attrs', {})
         add_class(attrs, 'td', 'text-right')
@@ -113,7 +129,7 @@ class CurrencyColumn(NumberColumn):
         return humane_currency(value) if self.human_format else format_as_currency(value)
 
 
-class HiddenIdInputColumn(Column):
+class HiddenIdInputColumn(EnhancedColumn):
     def render(self, value):
         field = forms.CharField(widget=ReadOnlyInput())
         return mark_safe(field.widget.render('id', value))

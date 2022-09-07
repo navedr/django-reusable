@@ -1,5 +1,8 @@
+from django_tables2 import SingleTableView
+
 from django_reusable.mixin_views import CRUDViews
 from .models import Person
+from .tables import PersonTable
 
 
 class ManagerPersonView(CRUDViews):
@@ -10,3 +13,9 @@ class ManagerPersonView(CRUDViews):
     edit_fields = ['first_name', 'last_name']
     object_title = 'Person'
     allow_edit = False
+
+
+class PersonTableView(SingleTableView):
+    template_name = 'admin/table.pug'
+    table_class = PersonTable
+    queryset = Person.objects.all()

@@ -1,6 +1,19 @@
 {% extends 'django_tables2/table.html' %}
 {% load template_helpers %}
 
+{% block table.tbody.row %}
+    {{ block.super }}
+    {% if row.table.new_row_columns %}
+        {% for new_row in row.new_rows %}
+            <tr {{ row.attrs.as_html }}>
+                {% for column, cell in new_row %}
+                    <td {{ column.attrs.td.as_html }}>{{ cell }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    {% endif %}
+{% endblock table.tbody.row %}
+
 {% block table.tfoot %}
     {{ block.super }}
     <tfoot>
