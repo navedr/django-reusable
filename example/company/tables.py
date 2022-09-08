@@ -7,7 +7,7 @@ from .models import Person
 
 class PersonTable(EnhancedTable):
     first_name = Column()
-    last_name = EnhancedColumn(new_row_index=1, colspan=2)
+    position = EnhancedColumn(new_row_index=1, colspan=3, no_empty_cell=True, empty_values=())
 
     class Meta:
         model = Person

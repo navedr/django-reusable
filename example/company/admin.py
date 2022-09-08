@@ -15,11 +15,13 @@ class PersonAdmin(EnhancedAdminMixin):
         ('say_hello', dict(btn_text='Say Hello', btn_class='btn-warning', callback=lambda instance: print("Hello"))),
         ('person_manager', dict(btn_text='Manager', custom_redirect=True, btn_class='btn-primary',
                                 callback=lambda instance: redirect(reverse('person_manager')))),
+        ('person_table', dict(btn_text='Table', custom_redirect=True, btn_class='btn-primary',
+                              callback=lambda instance: redirect(reverse('person_table')))),
         ('throw_error', dict(btn_text='Throw Error', btn_class='btn-danger', callback=lambda instance: mark_safe())),
     ]
 
-    list_display = fields = ['first_name', 'last_name', 'alert_name', 'say_hello', 'throw_error',
-                             'person_manager']
+    list_display = fields = ['first_name', 'last_name', 'position', 'alert_name', 'say_hello', 'throw_error',
+                             'person_manager', 'person_table']
 
 
 class MusicianAdmin(admin.ModelAdmin):

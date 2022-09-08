@@ -10,8 +10,13 @@ from django_reusable.widgets import ReadOnlyInput
 
 
 class EnhancedColumn(Column):
-    def __init__(self, new_row_index: int = None, colspan: int = None, *args, **kwargs):
+    def __init__(self,
+                 new_row_index: int = None,
+                 colspan: int = None,
+                 no_empty_cell: bool = False,
+                 *args, **kwargs):
         self.new_row_index = new_row_index
+        self.no_empty_cell = no_empty_cell
         super().__init__(*args, **kwargs)
         if colspan:
             td_attrs = self.attrs.get('td', {})

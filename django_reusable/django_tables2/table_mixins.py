@@ -15,6 +15,8 @@ class EnhancedBoundRow(BoundRow):
             if row == new_row_index:
                 column.current_value = self.get_cell(column.name)
                 column.current_record = self.record
+                if not column.current_value and getattr(column.column, 'no_empty_cell', False):
+                    continue
                 yield column, column.current_value
 
 
