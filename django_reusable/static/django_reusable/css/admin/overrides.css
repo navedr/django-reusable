@@ -1,0 +1,108 @@
+.toggle-fav-dialog ul li label { padding: 15px; border: 1px solid silver; border-radius: 5px; font-size: 14pt; }
+
+@media only screen and (max-width: 767px) {
+    body {
+        min-width: auto;
+    }
+
+    #wrap {
+        background: none;
+    }
+
+    .suit-columns {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    #suit-center {
+        padding-left: 0;
+    }
+
+    #suit-left {
+        position: absolute;
+        background: white;
+        margin-left: auto;
+        display: none;
+        left: 0;
+        right: unset;
+        border: 1px solid silver;
+        z-index: 1000;
+    }
+
+    .header {
+        height: 55px;
+    }
+
+    .header #branding {
+        min-width: unset;
+    }
+
+    .brand-name {
+        display: none;
+    }
+
+    .header-content-first {
+        display: none;
+    }
+
+    .header #user-tools {
+        max-width: 65vw;
+        padding-top: 5px;
+    }
+
+    .header #user-tools .user-links {
+        float: right;
+    }
+
+    .breadcrumb {
+        font-size: 9pt;
+    }
+
+    .menu-link {
+        display: inline-block;
+        margin-top: 10px;
+        margin-left: 10px;
+    }
+
+    .user-links > *:nth-child(2), .user-links > *:nth-child(3) {
+        display: none !important;
+    }
+
+    #changelist-form .results,
+    .inline-group {
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    .inner-two-columns .inner-right-column {
+        float: unset;
+        width: unset;
+    }
+
+    .inner-two-columns .inner-right-column.fixed {
+        position: static;
+    }
+
+    .inner-two-columns .inner-center-column {
+        margin-right: unset;
+    }
+
+    .submit-row button {
+        height: 50px;
+    }
+
+    .submit-row button[name="_addanother"] {
+        display: none;
+    }
+
+    .form-horizontal .control-group .control-label {
+        min-width: unset;
+    }
+
+    .dashboard #content #content-main {
+        float: unset;
+        display: table;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
