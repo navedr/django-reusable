@@ -4,8 +4,8 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET
 
-from .models import Error
-from .user_utils import is_superuser
+from django_reusable.models import Error
+from django_reusable.utils.user_utils import is_superuser
 
 
 @require_GET

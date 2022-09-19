@@ -6,7 +6,7 @@ from django_tables2 import CheckBoxColumn as DefaultCheckBoxColumn, Column
 from django_tables2.utils import AttributeDict
 
 from django_reusable.utils import global_request, humane_currency, format_as_currency
-from django_reusable.widgets import ReadOnlyInput
+from django_reusable.forms.widgets import ReadOnlyInput
 
 
 class EnhancedColumn(Column):

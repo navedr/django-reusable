@@ -3,8 +3,8 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 
-from django_reusable.admin_mixins import EnhancedAdminMixin
-from django_reusable.logging import PrintLogger
+from django_reusable.admin.mixins import EnhancedAdminMixin
+from django_reusable.logging.loggers import PrintLogger
 from .models import Person, Album, Musician
 
 

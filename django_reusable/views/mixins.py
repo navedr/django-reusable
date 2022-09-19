@@ -13,7 +13,7 @@ from django.views.generic import CreateView, UpdateView, DeleteView
 from django_tables2 import SingleTableView, LinkColumn, A
 
 from django_reusable.django_tables2.table_mixins import EnhancedTable
-from django_reusable.user_utils import current_user_has_perms
+from django_reusable.utils.user_utils import current_user_has_perms
 
 
 class CRUDViews(UserPassesTestMixin, SingleTableView):

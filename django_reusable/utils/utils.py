@@ -30,7 +30,7 @@ locale.setlocale(locale.LC_ALL, '')
 
 
 def global_request():
-    from .middleware import CRequestMiddleware
+    from django_reusable.middleware import CRequestMiddleware
     return CRequestMiddleware.get_request()
 
 

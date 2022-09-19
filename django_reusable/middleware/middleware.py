@@ -5,7 +5,7 @@ from urllib.parse import quote_plus
 from django.conf import settings
 from django.http import HttpResponseRedirect
 
-from django_reusable.error_tracker import ErrorTracker
+from django_reusable.error_tracker.error_tracker import ErrorTracker
 
 try:
     from django.utils.deprecation import MiddlewareMixin

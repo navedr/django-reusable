@@ -1,6 +1,7 @@
 from django.urls import include
 
-from django_reusable import views, error_tracker_views
+from django_reusable import views
+from django_reusable.error_tracker import views as error_tracker_views
 from django.conf.urls import url
 app_name = "django_reusable"
 

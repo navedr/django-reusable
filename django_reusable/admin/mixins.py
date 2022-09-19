@@ -8,10 +8,10 @@ from django.shortcuts import redirect
 from django.urls import reverse, path
 from django.utils.safestring import mark_safe
 
-from .admin_utils import remove_from_fieldsets
-from .filters import SearchInFilter
-from .forms import EnhancedBaseInlineFormSet
-from .utils import ifilter
+from django_reusable.admin.utils import remove_from_fieldsets
+from django_reusable.admin.filters import SearchInFilter
+from django_reusable.forms.forms import EnhancedBaseInlineFormSet
+from django_reusable.utils import ifilter
 
 
 class EnhancedAdminInlineMixin(InlineModelAdmin):

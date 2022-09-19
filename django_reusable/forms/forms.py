@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import HiddenInput, BaseInlineFormSet
 
-from django_reusable.widgets import ReadOnlyInput
+from .widgets import ReadOnlyInput
 
 
 class HiddenModelForm(forms.ModelForm):

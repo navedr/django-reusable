@@ -1,5 +1,3 @@
-
-
 def remove_from_fieldsets(fieldsets, fields):
     if not fields:
         return

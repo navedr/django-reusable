@@ -3,7 +3,7 @@ import os
 from django import forms
 from django.utils.safestring import mark_safe
 
-from .utils import xstr
+from django_reusable.utils import xstr
 
 
 class FileLinkWidget(forms.TextInput):

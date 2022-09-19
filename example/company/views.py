@@ -1,6 +1,6 @@
 from django_tables2 import SingleTableView
 
-from django_reusable.mixin_views import CRUDViews
+from django_reusable.views.mixins import CRUDViews
 from .models import Person
 from .tables import PersonTable
 
