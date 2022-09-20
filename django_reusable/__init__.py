@@ -1,5 +1,7 @@
 __version__ = (0, 6, 'beta')
 
+from django_reusable.admin.theme import generate_admin_theme_colors
+
 
 def apply_suit_multi_admin():
     from django.conf import settings
@@ -9,3 +11,5 @@ def apply_suit_multi_admin():
 
 
 apply_suit_multi_admin()
+
+generate_admin_theme_colors()

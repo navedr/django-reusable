@@ -1,0 +1,20 @@
+{% extends 'admin/base.html' %}
+{% load staticfiles template_helpers %}
+
+{% block extrastyle %}
+    {% theme_override_color as theme_override_color_value %}
+    {% if theme_override_color_value %}
+        <style>
+            :root {
+                --textColor: {{ theme_override_color_value.textColor }};
+                --linkColor: {{ theme_override_color_value.linkColor }};
+                --linkHoverColor: {{ theme_override_color_value.linkHoverColor }};
+                --linkVisitedColor: {{ theme_override_color_value.linkVisitedColor }};
+                --bgLevel1: {{ theme_override_color_value.bgColor1 }};
+                --bgLevel2: {{ theme_override_color_value.bgColor2 }};
+                --bgLevel3: {{ theme_override_color_value.bgColor3 }};
+            }
+        </style>
+        <link rel="stylesheet" type="text/css" href="{% static 'django_reusable/css/admin/theme.css' %}" media="all"/>
+    {% endif %}
+{% endblock %}

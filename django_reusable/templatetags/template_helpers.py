@@ -1,8 +1,8 @@
 from django.template import Node, TemplateSyntaxError, Variable
 from django.template.defaulttags import register
-
 from django.utils.html import strip_tags as strip_tags_util
 
+from django_reusable.admin.theme import THEME_COLORS
 from django_reusable.utils import format_as_currency
 
 
@@ -85,3 +85,8 @@ def dynamic_formset(formset, tabular=False, add_button_text=None):
 @register.filter
 def replace_new_line_with_br(value):
     return value.replace("\n", "<br/>")
+
+
+@register.simple_tag
+def theme_override_color():
+    return THEME_COLORS

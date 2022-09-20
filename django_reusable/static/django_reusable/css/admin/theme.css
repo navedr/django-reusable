@@ -1,0 +1,69 @@
+body {
+    background-color: var(--bgLevel1);
+    color: var(--textColor);
+}
+
+a {
+    color: var(--linkColor);
+}
+
+a:hover {
+    color: var(--linkHoverColor);
+}
+
+a:visited {
+    color: var(--linkVisitedColor);
+}
+
+body table td,
+body table th,
+.footer,
+.breadcrumb li.active,
+.breadcrumb li.active a,
+.left-nav > ul > li > a,
+.left-nav > ul > li ul li.active a {
+    color: var(--textColor);
+}
+
+body table td,
+body table th {
+    background: var(--bgLevel2)!important;
+    text-shadow: none !important;
+}
+
+#wrap {
+    background: transparent;
+}
+
+.footer,
+.header {
+    background: var(--bgLevel2);
+}
+
+.login #content-main h1,
+.login #content-main .submit-row,
+.form-horizontal .control-group .controls,
+.breadcrumb,
+.box, .well,
+.left-nav > ul > li.active > a,
+.left-nav > ul > li ul li a:hover {
+    background: var(--bgLevel2);
+}
+
+.login #content-main,
+.form-horizontal .control-group .control-label,
+.left-nav > ul > li ul {
+    background-color: var(--bgLevel3);
+}
+
+.login #content-main .submit-row {
+    border-top: none;
+}
+
+.breadcrumb > li {
+    text-shadow: none;
+}
+
+.left-nav > ul > li ul li a:hover {
+    text-shadow: none;
+}

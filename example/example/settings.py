@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'django_reusable',
     'suit',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -38,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_reusable',
+
     'django_tables2',
     'crispy_forms',
 
@@ -136,3 +137,8 @@ STATIC_URL = '/static/'
 REUSABLE_SHOW_ERRORS_LINK = True
 REUSABLE_ENABLE_SUIT_MULTI_ADMIN = True
 REUSABLE_SHOW_ERRORS_PERM = lambda user: user.is_superuser
+REUSABLE_ADMIN_THEME_OVERRIDE = {
+    # 'background_color': '#3b3a3a',
+    # 'text_color': '#ffffff',
+    # 'link_color': '#000000'
+}
