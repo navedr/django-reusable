@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.exceptions import ImproperlyConfigured
 from django.db import transaction
+from django.db.models import QuerySet
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy, include
 from django.utils.safestring import mark_safe
@@ -178,23 +179,29 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
             template_name = 'django_reusable/crud/add_wizard.pug'
             form_list = cls.add_wizard_view_class.form_list + [('review', ReviewForm)]
 
+            def _add_review_data(self, context_data):
+                all_data = self.get_all_cleaned_data()
+                all_field_labels = {}
+                for form_key in self.get_form_list():
+                    form_obj = self.get_form(
+                        step=form_key,
+                        data=self.storage.get_step_data(form_key),
+                        files=self.storage.get_step_files(form_key)
+                    )
+                    if hasattr(form_obj, 'fields'):
+                        for field in form_obj.fields.keys():
+                            all_field_labels[field] = form_obj.fields[field].label or field.replace(
+                                '_', ' ').title()
+                for k, v in all_data.items():
+                    if isinstance(v, QuerySet):
+                        all_data[k] = mark_safe('<ul>' + ''.join([f'<li>{x}</li>' for x in v]) + '</ul>')
+                context_data['all_data'] = OrderedDict(
+                    (all_field_labels.get(k, k), v) for (k, v) in all_data.items())
+
             def get_context_data(self, form, **kwargs):
                 context_data = super().get_context_data(form, **kwargs)
                 if self.steps.current == 'review':
-                    all_data = self.get_all_cleaned_data()
-                    all_field_labels = {}
-                    for form_key in self.get_form_list():
-                        form_obj = self.get_form(
-                            step=form_key,
-                            data=self.storage.get_step_data(form_key),
-                            files=self.storage.get_step_files(form_key)
-                        )
-                        if hasattr(form_obj, 'fields'):
-                            for field in form_obj.fields.keys():
-                                all_field_labels[field] = form_obj.fields[field].label or field.replace(
-                                    '_', ' ').title()
-                    context_data['all_data'] = OrderedDict(
-                        (all_field_labels.get(k, k), v) for (k, v) in all_data.items())
+                    self._add_review_data(context_data)
                 current_form_index = list(self.get_form_list().keys()).index(self.steps.current)
                 context_data.update(
                     step_url_name=step_url_name,
