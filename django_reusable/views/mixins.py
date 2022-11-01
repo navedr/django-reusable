@@ -69,6 +69,7 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
             raise_exception = True
 
             def test_func(self):
+                list_view_instance.request = self.request
                 return cls.has_perms()
 
             def get_context_data(self, **kwargs):
