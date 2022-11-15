@@ -5,7 +5,17 @@ from django.utils.safestring import mark_safe
 
 from django_reusable.admin.mixins import EnhancedAdminMixin
 from django_reusable.logging.loggers import PrintLogger
-from .models import Person, Album, Musician
+from .models import Person, Album, Musician, MusicianConcert
+
+
+class MusicianInline(admin.TabularInline):
+    model = Musician
+    extra = 0
+    readonly_fields = ['edit_concerts']
+
+    def edit_concerts(self, instance):
+        return mark_safe(f'''<a href="javascript:window.open('https://www.w3schools.com', 
+        'edit_caterer','height=200,width=150')">Concerts</a>''')
 
 
 class PersonAdmin(EnhancedAdminMixin):
@@ -19,13 +29,19 @@ class PersonAdmin(EnhancedAdminMixin):
                               callback=lambda instance: redirect(reverse('person_table')))),
         ('throw_error', dict(btn_text='Throw Error', btn_class='btn-danger', callback=lambda instance: mark_safe())),
     ]
+    inlines = [MusicianInline]
 
     list_display = fields = ['first_name', 'last_name', 'position', 'alert_name', 'say_hello', 'throw_error',
                              'person_manager', 'person_table']
 
 
+class MusicianConcertInline(admin.TabularInline):
+    model = MusicianConcert
+    extra = 0
+
+
 class MusicianAdmin(admin.ModelAdmin):
-    pass
+    inlines = [MusicianConcertInline]
 
 
 class AlbumAdmin(admin.ModelAdmin):

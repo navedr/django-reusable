@@ -61,7 +61,7 @@ def get_adjacent_months(month, year, plus=0, minus=0):
     month = str(int(month)).zfill(2)
     result = []
     finder = operator.itemgetter(0)
-    month_index = map(finder, MONTH_NAMES).index(month)
+    month_index = list(map(finder, MONTH_NAMES)).index(month)
     for x in range(0, minus):
         y = minus - x
         i = month_index - y
