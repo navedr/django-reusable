@@ -99,7 +99,11 @@ def get_last_month():
     return last_day_of_last_month.month, last_day_of_last_month.year
 
 
-def last_day_of_month(day: date):
+def last_day_of_month(day: date = None, year: int = None, month: int = None):
+    if not day and year and month:
+        day = datetime(year, month, 1, 23, 59, 59)
+    if not day:
+        raise Exception("Please pass 'day' or (year, month)")
     next_month = day.replace(day=28) + timedelta(days=4)
     return next_month - timedelta(days=next_month.day)
 
