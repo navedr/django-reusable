@@ -1,10 +1,18 @@
 {% extends 'admin/base.html' %}
+{% load staticfiles %}
+
+{% block extrahead %}
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="{% static 'django_reusable/css/admin/overrides.css' %}" media="all"/>
+{% endblock %}
+
 {% block content %}
     {% if error %}
         <h1 class="text-center alert alert-danger">{{ error }}</h1>
     {% else %}
         <h2 class="text-center">Errors</h2>
-        <table class="table table-condensed">
+        <div style="max-width: 100%; overflow: auto">
+            <table class="table table-condensed">
             <thead>
             <tr>
                 <th>Host</th>
@@ -37,6 +45,8 @@
             {% endfor %}
             </tbody>
         </table>
+        </div>
+
         {% if prev_url or next_url %}
             <hr>
             <div>

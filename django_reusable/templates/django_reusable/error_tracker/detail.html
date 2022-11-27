@@ -1,5 +1,11 @@
 {% extends 'admin/base.html' %}
-{% load template_helpers %}
+{% load template_helpers staticfiles %}
+
+{% block extrahead %}
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="{% static 'django_reusable/css/admin/overrides.css' %}" media="all"/>
+{% endblock %}
+
 {% block content %}
     <style>
         table tbody tr td:first-child {
@@ -80,7 +86,8 @@
                 <a href="{% url 'django_reusable:errors' %}" class="btn btn-info">Back</a>
             </div>
         </div>
-        <table class="table table-bordered">
+        <div style="max-width: 100%; overflow: auto">
+            <table class="table table-bordered">
             <tbody>
             <tr>
                 <td>URL</td>
@@ -120,21 +127,6 @@
             </tr>
             </tbody>
         </table>
-        <div style="display: none">
-            <p><strong>URL:</strong>{{ obj.host }}{{ obj.path }}</p>
-            <hr/>
-            <p><strong>Method: </strong>{{ obj.method }}</p>
-            <hr/>
-            <p><strong>First time seen: </strong>{{ obj.created_on }}</p>
-            <hr/>
-            <p><strong>Last seen: </strong>{{ obj.last_seen }}</p>
-            <hr/>
-            <p><strong>Occurrences: </strong>{{ obj.count }}</p>
-            <hr/>
-            <div><strong>Request data: </strong>{{ obj.request_data }}</div>
-            <hr/>
-            <div><strong>Exception detail: </strong><br/>
-                {{ obj.traceback|escape|replace_new_line_with_br|safe }}</div>
         </div>
     </div>
 {% endblock %}
