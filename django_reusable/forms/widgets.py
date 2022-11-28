@@ -57,3 +57,40 @@ class ReadOnlyInput(forms.TextInput):
 
 class DateInput(forms.DateInput):
     input_type = 'date'
+
+
+class SingleCharSplitInput(forms.TextInput):
+    def __init__(self, split=2, *args, **kwargs):
+        self.split = split
+        super().__init__(*args, **kwargs)
+
+    def render(self, name, value, attrs=None, renderer=None):
+        attrs = attrs or {}
+        split_input_attrs = attrs.copy()
+        split_input_attrs.update({
+            'minlength': 1,
+            'maxlength': 1,
+            'style': 'width: 20px; margin-right: 3px;',
+            'class': 'form-control split-char',
+            'id': '',
+        })
+        attrs_str = " ".join([f'{k}="{v}"' for (k, v) in split_input_attrs.items()])
+        inputs = [f'<input {attrs_str} />' for x in range(0, self.split)]
+        attrs['style'] = 'display: none;'
+        return '''
+                <script>
+                    $(document).ready(function () {
+                        $('input.split-char').on("keyup", function(){
+                            if($(this).val().length == $(this).attr("maxlength")){
+                                $(this).next().focus();
+                                $("#id_%s").val(Array.from($('input.split-char')).map(x => x.value).join(''));
+                            }
+                        }); 
+                    })
+                </script>
+               ''' % (name, ) + f'''    
+            <div class='single-char-split-inputs'>
+                <div>{"".join(inputs)}</div>
+                {super().render(name, value, attrs, renderer)}
+            </div>
+        '''

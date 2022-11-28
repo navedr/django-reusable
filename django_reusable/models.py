@@ -15,6 +15,11 @@ from django_reusable.utils import get_property
 
 class GenericRelationMixin(models.Model):
     @property
+    def content_object_link(self):
+        return mark_safe(f'''{self.content_type}: <a target="_blank" 
+        href="{self.content_object.get_obj_change_url()}">{self.content_object}</a>''')
+
+    @property
     def this_content_object(self):
         return type(self).objects.filter(content_type=self.content_type, object_id=self.object_id)
 
