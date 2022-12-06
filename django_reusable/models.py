@@ -10,6 +10,7 @@ from django.urls import NoReverseMatch, reverse
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now
 
+from django_reusable.admin.urls import ModelURLs
 from django_reusable.utils import get_property
 
 
@@ -60,58 +61,51 @@ class ModelUtilsMixin:
 
     @classmethod
     def get_add_url_name(cls, site='admin'):
-        return '%s:%s_%s_add' % (site, cls._meta.app_label, cls._meta.model_name)
+        return ModelURLs(cls, site).get_add_url_name()
 
     @classmethod
     def get_add_url(cls, site='admin'):
-        return reverse(cls.get_add_url_name(site))
+        return ModelURLs(cls, site).get_add_url()
 
     @classmethod
     def get_changelist_url_name(cls, site='admin'):
-        return '%s:%s_%s_changelist' % (site, cls._meta.app_label, cls._meta.model_name)
+        return ModelURLs(cls, site).get_changelist_url_name()
 
     @classmethod
     def get_changelist_url(cls, site='admin'):
-        return reverse(cls.get_changelist_url_name(site))
+        return ModelURLs(cls, site).get_changelist_url()
 
     @classmethod
     def get_change_url_name(cls, site='admin'):
-        return '%s:%s_%s_change' % (site, cls._meta.app_label, cls._meta.model_name)
+        return ModelURLs(cls, site).get_change_url_name()
 
     def get_change_url_for_object(self, site='admin'):
-        return reverse(self.get_change_url_name(site), args=[self.pk])
+        return ModelURLs(self, site, self.pk).get_obj_change_url()
 
     @classmethod
     def get_change_url(cls, pk, site='admin'):
-        return reverse(cls.get_change_url_name(site), args=[pk])
+        return ModelURLs(cls, site, pk).get_obj_change_url()
 
     def get_obj_change_link_tag(self, text, css_class='', target='', site='admin'):
-        return f'<a target="{target}" class="{css_class}" href="{self.get_obj_change_url(site)}">{text}</a>'
+        return ModelURLs(self, site, self.pk).get_obj_change_link_tag(text, css_class, target, site)
 
     def get_obj_change_url(self, site='admin'):
-        return self.__class__.get_change_url(self.pk, site)
+        return ModelURLs(self, site, self.pk).get_obj_change_url()
 
     @classmethod
     def get_delete_url_name(cls, site='admin'):
-        return '%s:%s_%s_delete' % (site, cls._meta.app_label, cls._meta.model_name)
+        return ModelURLs(cls, site).get_delete_url_name()
 
     @classmethod
     def get_delete_url(cls, pk, site='admin'):
-        return reverse(cls.get_delete_url_name(site), args=[pk])
+        return ModelURLs(cls, site, pk).get_obj_delete_url()
 
     def get_obj_delete_url(self, site='admin'):
-        return self.__class__.get_delete_url(self.pk, site)
+        return ModelURLs(self, site, self.pk).get_obj_delete_url()
 
     @property
     def change_link(self):
-        if self.pk:
-            try:
-                return mark_safe(u'<a href="{w}" class="admin-edit-link">Details</a>'.format(
-                    w=self.__class__.get_change_url(self.pk)))
-            except NoReverseMatch:
-                return None
-        else:
-            return None
+        return ModelURLs(self, pk=self.pk).get_change_link()
 
     @property
     def original_obj(self):

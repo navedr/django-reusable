@@ -1,7 +1,9 @@
 from django.db import models
 
+from django_reusable.models import TimeStampedModel
 
-class Person(models.Model):
+
+class Person(TimeStampedModel):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     position = models.CharField(max_length=30, null=True, blank=True)

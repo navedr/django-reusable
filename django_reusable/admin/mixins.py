@@ -8,6 +8,7 @@ from django.shortcuts import redirect
 from django.urls import reverse, path
 from django.utils.safestring import mark_safe
 
+from django_reusable.admin.urls import ModelURLs
 from django_reusable.admin.utils import remove_from_fieldsets
 from django_reusable.admin.filters import SearchInFilter
 from django_reusable.forms.forms import EnhancedBaseInlineFormSet
@@ -200,9 +201,8 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
                     messages.info(request, r)
             if config.get('stay_on_page', False):
                 return HttpResponseRedirect(
-                    reverse('%s:%s_%s_change' % (
-                        self.admin_site.name, self.model._meta.app_label, self.model._meta.model_name),
-                            args=[object_id]))
+                    ModelURLs(self.model, self.admin_site.name, object_id).get_obj_change_url()
+                )
             break
         return None
 
