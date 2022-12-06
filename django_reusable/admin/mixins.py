@@ -199,10 +199,9 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
                 if r:
                     messages.info(request, r)
             if config.get('stay_on_page', False):
-                model_class = self.model.__class__
                 return HttpResponseRedirect(
                     reverse('%s:%s_%s_change' % (
-                        self.admin_site.name, model_class._meta.app_label, model_class._meta.model_name),
+                        self.admin_site.name, self.model._meta.app_label, self.model._meta.model_name),
                             args=[object_id]))
             break
         return None
