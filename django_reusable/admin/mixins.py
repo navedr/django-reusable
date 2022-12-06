@@ -108,7 +108,7 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
     extra_change_form_buttons = []
     """
         List of tuples:
-        (url, dict(link_text, link_class, new_tab, user_passes_test))
+        (url, dict(link_text, link_class, new_tab, user_passes_test, pk_passes_test))
     """
     extra_changelist_links = []
     """
@@ -179,12 +179,13 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
     def custom_changelist_actions(self, request):
         pass
 
-    def _add_extra_change_form_buttons(self, request, extra_context):
+    def _add_extra_change_form_buttons(self, request, pk, extra_context):
         extra_context.update(
             extra_submit_buttons=[
                 (f'__{name}', config.get('btn_class', 'btn-primary'), config.get('btn_text', 'Button'))
                 for (name, config) in self.extra_change_form_buttons
-                if config.get('user_passes_test', lambda u: True)(request.user)
+                if (config.get('user_passes_test', lambda u: True)(request.user) and
+                    config.get('pk_passes_test', lambda _pk: True)(pk))
             ]
         )
 
@@ -198,7 +199,11 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
                 if r:
                     messages.info(request, r)
             if config.get('stay_on_page', False):
-                return HttpResponseRedirect(self.model.get_change_url(object_id))
+                model_class = self.model.__class__
+                return HttpResponseRedirect(
+                    reverse('%s:%s_%s_change' % (
+                        self.admin_site.name, model_class._meta.app_label, model_class._meta.model_name),
+                            args=[object_id]))
             break
         return None
 
@@ -240,7 +245,7 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
         extra_context.update(
             hide_save_buttons=self.hide_save_buttons(request, object_id)
         )
-        self._add_extra_change_form_buttons(request, extra_context)
+        self._add_extra_change_form_buttons(request, object_id, extra_context)
         if request.method == 'POST' and extra_context['hide_save_buttons']:
             raise PermissionDenied()
         response = super().change_view(request, object_id, form_url, extra_context)
