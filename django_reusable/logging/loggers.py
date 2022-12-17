@@ -4,10 +4,13 @@ from django.conf import settings
 
 
 class PrintLogger:
-    def __init__(self, name):
+    def __init__(self, name, enabled=True):
         self.name = name
+        self.enabled = enabled
 
     def _log(self, level, *message):
+        if not self.enabled:
+            return
         msg = ' '.join([str(m) for m in message])
         to_write = f'{datetime.now()} [{level}]{" "*4} {self.name}: {msg}'
         if getattr(settings, 'REUSABLE_PRINT_LOGGER_FILE_PATH', None):
