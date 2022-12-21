@@ -4,8 +4,11 @@ from urllib.parse import quote_plus
 
 from django.conf import settings
 from django.http import HttpResponseRedirect
+from django.urls import resolve
 
+from django_reusable.constants import URLNames
 from django_reusable.error_tracker.error_tracker import ErrorTracker
+from django_reusable.urls.utils import get_app_and_url_name
 
 try:
     from django.utils.deprecation import MiddlewareMixin
@@ -22,7 +25,11 @@ class LoginRequiredMiddleware:
 
     def __call__(self, request):
         path = request.path_info
-        if not request.user.is_authenticated and not any(m.match(path) for m in self.open_urls):
+        app_name, url_name = get_app_and_url_name(request)
+        should_redirect_to_login = (not request.user.is_authenticated and
+                                    not any(m.match(path) for m in self.open_urls) and
+                                    not (app_name == 'django_reusable' and url_name == URLNames.IS_USER_AUTHENTICATED))
+        if should_redirect_to_login:
             next_page = '%s?%s' % (path, request.META['QUERY_STRING'])
             return HttpResponseRedirect('%s?next=%s' % (self.login_url, quote_plus(next_page)))
 

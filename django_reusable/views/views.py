@@ -1,7 +1,7 @@
 import json
 
 from django.contrib import admin
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 
@@ -17,3 +17,8 @@ def ajax_callback_handler(request, name, pk):
         ))
         return HttpResponse(callback(**kwargs))
     return HttpResponse(f'no callback params defined for {name}')
+
+
+@csrf_exempt
+def is_user_authenticated(request):
+    return JsonResponse(request.user.is_authenticated, safe=False)
