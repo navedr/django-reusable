@@ -1,4 +1,6 @@
-from django.urls import get_resolver, resolve
+from django.urls import get_resolver, resolve, reverse
+
+from django_reusable.constants import URLNames
 
 
 def get_all_urls():
@@ -10,6 +12,10 @@ def get_all_urls():
                 result[key] = f'/{val}'
         except:
             pass
+    try:
+        result[URLNames.IS_USER_AUTHENTICATED] = reverse(f"django_reusable:{URLNames.IS_USER_AUTHENTICATED}")
+    except:
+        pass
     return result
 
 
