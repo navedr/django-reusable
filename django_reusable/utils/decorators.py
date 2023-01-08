@@ -9,6 +9,9 @@ from ..logging.loggers import PrintLogger
 
 
 def parametrized(dec):
+    """
+    Decorator to wrap other decorators to preserve the arguments intellisense in IDEs.
+    """
     def layer(*args, **kwargs):
         def repl(f):
             return dec(f, *args, **kwargs)
