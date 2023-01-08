@@ -87,7 +87,7 @@ class ModelUtilsMixin:
         return ModelURLs(cls, site, pk).get_obj_change_url()
 
     def get_obj_change_link_tag(self, text, css_class='', target='', site='admin'):
-        return ModelURLs(self, site, self.pk).get_obj_change_link_tag(text, css_class, target, site)
+        return ModelURLs(self, site, self.pk).get_obj_change_link_tag(text, css_class, target)
 
     def get_obj_change_url(self, site='admin'):
         return ModelURLs(self, site, self.pk).get_obj_change_url()
