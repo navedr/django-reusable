@@ -22,7 +22,7 @@ def parametrized(dec):
 
 
 @parametrized
-def cache_data(func, timeout: int, by_args=False, enabled=True):
+def cache_data(func, timeout: int, by_args=False, enabled=True, custom_cache=None):
     """
     Decorator to cache the results of the method and return cached value if it's there. Useful for expensive calc.
 
@@ -30,6 +30,7 @@ def cache_data(func, timeout: int, by_args=False, enabled=True):
     :param timeout: Cache timeout.
     :param by_args: Caches by arguments if *True*.
     :param enabled: To enable or disable it.
+    :param custom_cache: To provide a custom instance of cache instead of default django one
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -37,7 +38,8 @@ def cache_data(func, timeout: int, by_args=False, enabled=True):
             return func(*args, **kwargs)
         args_flattened = (','.join(args) + ','.join([f'{k}:{v}' for (k, v) in kwargs.items()]) if by_args else '')
         key = f'fn:{func.__name__}, args:{args_flattened}'
-        return cache.get_or_set(key, lambda: func(*args, **kwargs), timeout)
+        _cache = custom_cache or cache
+        return _cache.get_or_set(key, lambda: func(*args, **kwargs), timeout)
 
     return wrapper
 
