@@ -14,14 +14,12 @@
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
     <option name="SCRIPT_NAME" value="twine" />
-    <option name="PARAMETERS" value="upload dist/* -u navedr -p $PYPI_PASS" />
+    <option name="PARAMETERS" value="upload dist/* -u navedr -p $Prompt$" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="true" />
     <option name="REDIRECT_INPUT" value="false" />
     <option name="INPUT_FILE" value="" />
-    <method v="2">
-      <option name="RunConfigurationTask" enabled="true" run_configuration_name="setup" run_configuration_type="PythonConfigurationType" />
-    </method>
+    <method v="2" />
   </configuration>
 </component>

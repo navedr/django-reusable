@@ -546,3 +546,8 @@ def pick(input_dict: dict, keys_to_pick: []):
 
 def omit(input_dict: dict, keys_to_omit: []):
     return dict((k, v) for (k, v) in input_dict.items() if k not in keys_to_omit)
+
+
+def find(fn, iterable):
+    filtered = imap(fn, iterable)
+    return filtered[0] if filtered else None
