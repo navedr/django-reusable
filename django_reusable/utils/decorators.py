@@ -36,8 +36,9 @@ def cache_data(func, timeout: int, by_args=False, enabled=True, custom_cache=Non
     def wrapper(*args, **kwargs):
         if not enabled:
             return func(*args, **kwargs)
-        args_flattened = (','.join(args) + ','.join([f'{k}:{v}' for (k, v) in kwargs.items()]) if by_args else '')
-        key = f'fn:{func.__name__}, args:{args_flattened}'
+        args_flattened = (', args:' + ','.join(imap(str, args)) + ','.join([f'{k}:{v}' for (k, v) in kwargs.items()])
+                          if by_args and enabled else '')
+        key = f'fn:{func.__name__}{args_flattened}'
         _cache = custom_cache or cache
         return _cache.get_or_set(key, lambda: func(*args, **kwargs), timeout)
 
