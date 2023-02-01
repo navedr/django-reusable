@@ -8,13 +8,20 @@ from .utils import imap
 from ..logging.loggers import PrintLogger
 
 
-def parametrized(dec):
+def get_decorator_key(func, func_name, by_args, enabled, *args, **kwargs):
+    args_flattened = (', args:' + ','.join(imap(str, args)) + ','.join([f'{k}:{v}' for (k, v) in kwargs.items()])
+                      if by_args and enabled else '')
+    return f'fn:{func_name or func.__name__}{args_flattened}'
+
+
+def parametrized(decorator):
     """
     Decorator to wrap other decorators to preserve the arguments intellisense in IDEs.
     """
+
     def layer(*args, **kwargs):
         def repl(f):
-            return dec(f, *args, **kwargs)
+            return decorator(f, *args, **kwargs)
 
         return repl
 
@@ -32,13 +39,12 @@ def cache_data(func, timeout: int, by_args=False, enabled=True, custom_cache=Non
     :param enabled: To enable or disable it.
     :param custom_cache: To provide a custom instance of cache instead of default django one
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         if not enabled:
             return func(*args, **kwargs)
-        args_flattened = (', args:' + ','.join(imap(str, args)) + ','.join([f'{k}:{v}' for (k, v) in kwargs.items()])
-                          if by_args and enabled else '')
-        key = f'fn:{func.__name__}{args_flattened}'
+        key = get_decorator_key(func, None, by_args, enabled, *args, **kwargs)
         _cache = custom_cache or cache
         return _cache.get_or_set(key, lambda: func(*args, **kwargs), timeout)
 
@@ -55,12 +61,11 @@ def log_exec_time(func, func_name=None, enabled=getattr(settings, 'DR_LOG_EXEC_T
     :param enabled: To enable or disable it. Can be enabled globally by setting DR_LOG_EXEC_TIME=True in django settings.
     :param log_args: Log arguments passed if *True*.
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
-        args_flattened = (', args:' + ','.join(imap(str, args)) + ','.join([f'{k}:{v}' for (k, v) in kwargs.items()])
-                          if log_args and enabled else '')
-        meta = f'fn:{func_name or func.__name__}{args_flattened}'
-        logger = PrintLogger(f"log_exec_time ({meta})", enabled=enabled)
+        key = get_decorator_key(func, func_name, log_args, enabled, *args, **kwargs)
+        logger = PrintLogger(f"log_exec_time ({key})", enabled=enabled)
         start = datetime.now()
         resp = func(*args, **kwargs)
         logger.info(f'execution time={(datetime.now() - start).seconds}s')
