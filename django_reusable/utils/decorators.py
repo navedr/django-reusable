@@ -58,7 +58,7 @@ def log_exec_time(func, func_name=None, enabled=getattr(settings, 'DR_LOG_EXEC_T
     def wrapper(*args, **kwargs):
         args_flattened = (', args:' + ','.join(imap(str, args)) + ','.join([f'{k}:{v}' for (k, v) in kwargs.items()])
                           if log_args and enabled else '')
-        meta = func_name or f'fn:{func.__name__}{args_flattened}'
+        meta = f'fn:{func_name or func.__name__}{args_flattened}'
         logger = PrintLogger(f"log_exec_time ({meta})", enabled=enabled)
         start = datetime.now()
         resp = func(*args, **kwargs)
