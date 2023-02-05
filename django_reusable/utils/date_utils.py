@@ -57,20 +57,22 @@ def get_quarter(quarter_number):
     return quarter, list((k for (k, v) in QUARTER_MAP.items() if v == quarter))
 
 
-def get_adjacent_months(month, year, plus=0, minus=0):
-    month = str(int(month)).zfill(2)
+def get_adj_months(ref_day, offset):
     result = []
-    finder = operator.itemgetter(0)
-    month_index = list(map(finder, MONTH_NAMES)).index(month)
-    for x in range(0, minus):
-        y = minus - x
-        i = month_index - y
-        result.append((int(MONTH_NAMES[i][0]), year if i > 0 else year - 1))
-    result.append((int(month), year))
-    for x in range(0, plus):
-        i = month_index + x + 1
-        result.append((int(MONTH_NAMES[i][0]), year if i < 11 else year + 1))
+    current = ref_day
+    is_negative = offset < 0
+    for x in range(0, abs(offset)):
+        adj_month = current.replace(day=1 if is_negative else 28) + timedelta(days=-1 if is_negative else 4)
+        result.append((adj_month.month, adj_month.year))
+        current = adj_month
+    if is_negative:
+        result.reverse()
     return result
+
+
+def get_adjacent_months(month, year, plus=0, minus=0):
+    day = datetime(year, month, 1)
+    return get_adj_months(day, minus * -1) + [(day.month, day.year)] + get_adj_months(day, plus)
 
 
 def is_first_day_of_month(date_to_check=None):
