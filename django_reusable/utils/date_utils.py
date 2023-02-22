@@ -1,6 +1,8 @@
 import operator
 from datetime import datetime, timedelta, date
 
+from .utils import get_offset_range
+
 QUARTER_MAP = {}
 QUARTER_MAP.update(dict(zip((1, 2, 3), ('Q1',) * 3)))
 QUARTER_MAP.update(dict(zip((4, 5, 6), ('Q2',) * 3)))
@@ -122,3 +124,9 @@ def next_weekday(d, weekday):
     if days_ahead <= 0:  # Target day already happened this week
         days_ahead += 7
     return d + timedelta(days_ahead)
+
+
+def get_adjacent_dates(ref_date=None, plus=0, minus=0):
+    day_range = get_offset_range(minus, plus)
+    day = ref_date or datetime.today()
+    return [day + timedelta(days=offset) for offset in day_range]

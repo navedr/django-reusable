@@ -11,7 +11,7 @@ from ..logging.loggers import PrintLogger
 def get_decorator_key(func, func_name, by_args, enabled, *args, **kwargs):
     args_flattened = (', args:' + ','.join(imap(str, args)) + ','.join([f'{k}:{v}' for (k, v) in kwargs.items()])
                       if by_args and enabled else '')
-    return f'fn:{func_name or func.__name__}{args_flattened}'
+    return f'dr:fn:{func_name or func.__name__}{args_flattened}'
 
 
 def parametrized(decorator):

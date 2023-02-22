@@ -551,3 +551,7 @@ def omit(input_dict: dict, keys_to_omit: []):
 def find(fn, iterable):
     filtered = imap(fn, iterable)
     return filtered[0] if filtered else None
+
+
+def get_offset_range(minus=0, plus=0):
+    return list(reversed([x*-1 for x in range(1, minus + 1)])) + [0] + list(range(1, plus + 1))
