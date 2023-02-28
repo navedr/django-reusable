@@ -34,7 +34,7 @@ class ReadonlySelect(forms.Select):
     def render(self, name, value, attrs=None, renderer=None):
         matches = [t for (v, t) in self.choices if v == value]
         text = matches[0] if matches else None
-        return f'''{text or '---'}<input name="{name}" value="{value}" type="hidden" />'''
+        return f'''{xstr(text, '---')}<input name="{name}" value="{value}" type="hidden" />'''
 
 
 class ReadonlyMultiSelect(forms.SelectMultiple):
@@ -45,7 +45,7 @@ class ReadonlyMultiSelect(forms.SelectMultiple):
         attrs = attrs or {}
         attrs['style'] = 'display: none;'
         default_widget = super().render(name, value, attrs, renderer)
-        return f'''{text or '---'}{default_widget}'''
+        return f'''{xstr(text, '---')}{default_widget}'''
 
 
 class ReadOnlyInput(forms.TextInput):

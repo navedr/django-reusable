@@ -130,8 +130,8 @@ def get_temp_file_path(extn=None):
     return file_path
 
 
-def xstr(s):
-    return '' if s is None else str(s)
+def xstr(s, default=''):
+    return default if s is None else str(s)
 
 
 def prepend_project_directory(directory_name):
