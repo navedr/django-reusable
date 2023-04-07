@@ -1,45 +1,49 @@
 const EnhancedAdminMixin = {
-    init: function () {
+    init: function ({ isChangelist, isChangeForm }) {
         $.ajax({
             url: `${location.pathname}dr-admin-mixin-js-data`,
             success: $.proxy(function (data) {
-                console.log(data)
                 if (!data.enabled) {
                     return;
                 }
-                if ($("#changelist").size()) {
+                if (isChangelist) {
                     this.initChangelist(data);
-                } else if ($("body").hasClass("change-form")) {
+                } else if (isChangeForm) {
                     this.initChangeForm(data);
                 }
-            }, this)
-        })
+            }, this),
+        });
     },
     initChangelist: function (data) {
-        data.extra_links.forEach(({url, config: {link_class, new_tab, link_text}}) => {
+        data.extra_links.forEach(({ url, config: { link_class, new_tab, link_text } }) => {
             $("ul.breadcrumb").append(
                 `<li>
                     <span class="divider">|</span>
-                    <a href="${url}" class="btn ${link_class}" target="${new_tab ? '_blank' : ''}">${link_text}</a>
-                </li>`
-            )
+                    <a href="${url}" class="btn ${link_class}" target="${new_tab ? "_blank" : ""}">${link_text}</a>
+                </li>`,
+            );
         });
     },
     initChangeForm: function (data) {
         if (data.hide_save_buttons) {
             $(".submit-row").remove();
         } else {
-            data.extra_submit_buttons.forEach(({name, config: {btn_text, btn_class}}) => {
+            data.extra_submit_buttons.forEach(({ name, config: { btn_text, btn_class } }) => {
                 $(".submit-row").append(
-                    `<button name="__${name}" type="submit" class="btn ${btn_class}">${btn_text}</button>`
-                )
+                    `<button name="__${name}" type="submit" class="btn ${btn_class}">${btn_text}</button>`,
+                );
             });
         }
-    }
+    },
 };
 
 $(document).ready(function () {
-    if ($("#changelist").size() || $("body").hasClass("change-form")) {
-        EnhancedAdminMixin.init();
+    const isChangelist = !!$("#changelist").size();
+    const isChangeForm = $("body").hasClass("change-form");
+    if (isChangelist || isChangeForm) {
+        EnhancedAdminMixin.init({
+            isChangelist,
+            isChangeForm,
+        });
     }
 });

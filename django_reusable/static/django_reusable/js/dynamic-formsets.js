@@ -1,13 +1,12 @@
-const formClassName = '.dynamic-form-row';
-const formsContainer = '.formset-forms';
-const addBtnClassName = '.add-form-row';
-const removeBtnClassName = '.remove-form-row';
-const prefixAttrs = ['name', 'id', 'for'];
-const serialNoClassName = '.serial-no';
-const emptyFormDataAttr = '[data-empty-form]';
+const formClassName = ".dynamic-form-row";
+const formsContainer = ".formset-forms";
+const addBtnClassName = ".add-form-row";
+const removeBtnClassName = ".remove-form-row";
+const prefixAttrs = ["name", "id", "for"];
+const serialNoClassName = ".serial-no";
+const emptyFormDataAttr = "[data-empty-form]";
 
 (function ($) {
-
     $.fn.extend({
         dynamicFormSet: function (options) {
             options = $.extend({}, $.DynamicFormSet.defaults, options);
@@ -17,7 +16,7 @@ const emptyFormDataAttr = '[data-empty-form]';
             });
 
             return this;
-        }
+        },
     });
 
     // ctl is the element, options is the set of defaults + user options
@@ -26,7 +25,7 @@ const emptyFormDataAttr = '[data-empty-form]';
         const $total = $(`#id_${options.prefix}-TOTAL_FORMS`);
 
         function bindEvents() {
-            $($el).on('click', addBtnClassName, function (e) {
+            $($el).on("click", addBtnClassName, function (e) {
                 e.preventDefault();
                 const total = parseInt($total.val());
                 if (total < options.maxNum) {
@@ -36,7 +35,7 @@ const emptyFormDataAttr = '[data-empty-form]';
                 return false;
             });
 
-            $($el).on('click', removeBtnClassName, function (e) {
+            $($el).on("click", removeBtnClassName, function (e) {
                 e.preventDefault();
                 deleteForm($(this));
                 e.stopPropagation();
@@ -47,8 +46,8 @@ const emptyFormDataAttr = '[data-empty-form]';
         }
 
         function updateElementIndex(el, ndx) {
-            const id_regex = new RegExp('(' + options.prefix + '-\\d+)');
-            const replacement = options.prefix + '-' + ndx;
+            const id_regex = new RegExp("(" + options.prefix + "-\\d+)");
+            const replacement = options.prefix + "-" + ndx;
             if ($(el).attr("for")) $(el).attr("for", $(el).attr("for").replace(id_regex, replacement));
             if (el.id) el.id = el.id.replace(id_regex, replacement);
             if (el.name) el.name = el.name.replace(id_regex, replacement);
@@ -67,18 +66,18 @@ const emptyFormDataAttr = '[data-empty-form]';
 
         function updatedPrefixes($form) {
             const total = $total.val();
-            const prefixSelector = prefixAttrs.map(attr => `[${attr}*="__prefix__"]`).join(', ');
+            const prefixSelector = prefixAttrs.map(attr => `[${attr}*="__prefix__"]`).join(", ");
             const $prefixEl = $form.find(prefixSelector);
             $prefixEl.each((i, el) => {
                 const $pe = $(el);
                 prefixAttrs.forEach(attr => {
                     const value = $pe.attr(attr);
-                    if (value && value.match('__prefix__')) {
-                        $pe.attr(attr, value.replace('__prefix__', total));
+                    if (value && value.match("__prefix__")) {
+                        $pe.attr(attr, value.replace("__prefix__", total));
                     }
                 });
             });
-            $form.html($form.html().replace('__prefix__', total))
+            $form.html($form.html().replace("__prefix__", total));
         }
 
         function deleteForm(btn) {
@@ -88,9 +87,11 @@ const emptyFormDataAttr = '[data-empty-form]';
                 const $forms = $el.find(formClassName);
                 $total.val($forms.length);
                 for (let i = 0, formCount = $forms.length; i < formCount; i++) {
-                    $($forms.get(i)).find(':input').each(function () {
-                        updateElementIndex(this, i);
-                    });
+                    $($forms.get(i))
+                        .find(":input")
+                        .each(function () {
+                            updateElementIndex(this, i);
+                        });
                 }
             }
             toggleAddButton();
@@ -101,12 +102,14 @@ const emptyFormDataAttr = '[data-empty-form]';
 
         function toggleAddButton() {
             const total = parseInt($total.val());
-            $el.find(addBtnClassName).toggleClass('hide', total === options.maxNum);
+            $el.find(addBtnClassName).toggleClass("hide", total === options.maxNum);
         }
 
         function updateSerialNo() {
             $.each($el.find(formClassName), (i, el) => {
-                $(el).find(serialNoClassName).html(`# ${i + 1}`);
+                $(el)
+                    .find(serialNoClassName)
+                    .html(`# ${i + 1}`);
             });
         }
 
@@ -126,10 +129,9 @@ const emptyFormDataAttr = '[data-empty-form]';
 
     // option defaults
     $.DynamicFormSet.defaults = {
-        prefix: 'form',
+        prefix: "form",
         minNum: undefined,
         maxNum: undefined,
-        canDelete: true
+        canDelete: true,
     };
-
 })(jQuery);
