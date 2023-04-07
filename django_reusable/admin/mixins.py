@@ -3,7 +3,7 @@ from copy import deepcopy
 from django.contrib import admin, messages
 from django.contrib.admin.options import BaseModelAdmin, InlineModelAdmin
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse, path
 from django.utils.safestring import mark_safe
@@ -11,8 +11,9 @@ from django.utils.safestring import mark_safe
 from django_reusable.admin.urls import ModelURLs
 from django_reusable.admin.utils import remove_from_fieldsets
 from django_reusable.admin.filters import SearchInFilter
+from django_reusable.constants import URLNames
 from django_reusable.forms.forms import EnhancedBaseInlineFormSet
-from django_reusable.utils import ifilter
+from django_reusable.utils import ifilter, CustomEncoder
 
 
 class EnhancedAdminInlineMixin(InlineModelAdmin):
@@ -82,7 +83,7 @@ class AjaxActionMixin:
             def func(instance):
                 if not instance.id:
                     return ''
-                url = reverse('django_reusable:ajax_callback_handler',
+                url = reverse(f'django_reusable:{URLNames.AJAX_CALLBACK_HANDLER}',
                               args=(instance.pk, self.get_callback_key(name)))
                 return (f'<button class="{btn_class} ajax-action-btn" data-url="{url}">{btn_text}</button>' +
                         config.get('additional_html', ''))
@@ -94,7 +95,105 @@ class AjaxActionMixin:
             self.register_callback(name, config['callback'])
 
 
-class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
+class ExtraChangelistLinksMixin:
+    """
+        List of tuples:
+        (url, dict(link_text, link_class, new_tab, user_passes_test))
+    """
+    extra_changelist_links = []
+
+    def _get_applicable_extra_changelist_links(self, request):
+        def _add_default_values(config):
+            config['link_class'] = config.get('link_class', 'btn-link')
+            config['link_text'] = config.get('link_text', 'Link')
+            config['new_tab'] = config.get('new_tab', False)
+            return config
+
+        return [(url, _add_default_values(config)) for (url, config) in self.get_extra_changelist_links(request)
+                if config.get('user_passes_test', lambda u: True)(request.user)]
+
+    def _add_extra_changelist_links(self, request, extra_context):
+        extra_context.update(
+            extra_links=[
+                (url,
+                 config['link_class'],
+                 config['link_text'],
+                 config['new_tab'])
+                for (url, config) in self._get_applicable_extra_changelist_links(request)
+            ]
+        )
+
+    def get_extra_changelist_links(self, request):
+        return self.extra_changelist_links
+
+    def _changelist_mixin_js_data(self, request):
+        return dict(
+            extra_links=[dict(url=url, config=config) for (url, config) in
+                         self._get_applicable_extra_changelist_links(request)]
+        )
+
+
+class ExtraChangeFormButtonsMixin:
+    """
+        List of tuples:
+        ('name', dict(btn_text, btn_class, stay_on_page, callback, user_passes_test, pk_passes_test))
+    """
+    extra_change_form_buttons = []
+
+    def _get_applicable_extra_change_form_buttons(self, request, pk):
+        def _add_default_values(config):
+            config['btn_class'] = config.get('btn_class', 'btn-primary')
+            config['btn_text'] = config.get('btn_text', 'Button')
+            return config
+
+        return [
+            (name, _add_default_values(config)) for (name, config) in self.extra_change_form_buttons
+            if (config.get('user_passes_test', lambda u: True)(request.user) and
+                config.get('pk_passes_test', lambda _pk: True)(pk))
+        ]
+
+    def _add_extra_change_form_buttons(self, request, pk, extra_context):
+        extra_context.update(
+            extra_submit_buttons=[
+                (f'__{name}', config['btn_class'], config['btn_text'])
+                for (name, config) in self._get_applicable_extra_change_form_buttons(request, pk)
+            ]
+        )
+
+    def _handle_extra_change_form_buttons(self, request, object_id):
+        for (name, config) in self.extra_change_form_buttons:
+            if f'__{name}' not in request.POST:
+                continue
+            callback = config.get('callback')
+            if callback:
+                r = callback(self, request, object_id)
+                if r:
+                    messages.info(request, r)
+            if config.get('stay_on_page', False):
+                return HttpResponseRedirect(
+                    ModelURLs(self.model, self.admin_site.name, object_id).get_obj_change_url()
+                )
+            break
+        return None
+
+    def _change_form_mixin_js_data(self, request, object_id=None):
+        return dict(
+            object_id=object_id,
+            extra_submit_buttons=[
+                dict(name=name, config=config)
+                for (name, config) in self._get_applicable_extra_change_form_buttons(request, object_id)
+            ]
+        )
+
+
+class EnhancedAdminMixin(admin.ModelAdmin,
+                         EnhancedBaseAdminMixin,
+                         ExtraChangelistLinksMixin,
+                         ExtraChangeFormButtonsMixin):
+    """
+    Auto update template with all the extras and
+    """
+    auto_update_template = True
     default_filters = []
     search_in_choices = []
     """
@@ -102,16 +201,6 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
         ('field_name', lambda instance: instance.field.name, optional short_desc)
     """
     custom_fields = []
-    """
-        List of tuples:
-        ('name', dict(btn_text, btn_class, stay_on_page, callback))
-    """
-    extra_change_form_buttons = []
-    """
-        List of tuples:
-        (url, dict(link_text, link_class, new_tab, user_passes_test, pk_passes_test))
-    """
-    extra_changelist_links = []
     """
         List of tuples:
         ('name', dict(btn_text, btn_class, callback, short_desc, custom_redirect))
@@ -180,48 +269,11 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
     def custom_changelist_actions(self, request):
         pass
 
-    def _add_extra_change_form_buttons(self, request, pk, extra_context):
-        extra_context.update(
-            extra_submit_buttons=[
-                (f'__{name}', config.get('btn_class', 'btn-primary'), config.get('btn_text', 'Button'))
-                for (name, config) in self.extra_change_form_buttons
-                if (config.get('user_passes_test', lambda u: True)(request.user) and
-                    config.get('pk_passes_test', lambda _pk: True)(pk))
-            ]
-        )
-
-    def _handle_extra_change_form_buttons(self, request, object_id):
-        for (name, config) in self.extra_change_form_buttons:
-            if f'__{name}' not in request.POST:
-                continue
-            callback = config.get('callback')
-            if callback:
-                r = callback(self, request, object_id)
-                if r:
-                    messages.info(request, r)
-            if config.get('stay_on_page', False):
-                return HttpResponseRedirect(
-                    ModelURLs(self.model, self.admin_site.name, object_id).get_obj_change_url()
-                )
-            break
-        return None
-
-    def _add_extra_changelist_links(self, request, extra_context):
-        extra_context.update(
-            extra_links=[
-                (url,
-                 config.get('link_class', 'btn-link'),
-                 config.get('link_text', 'Link'),
-                 config.get('new_tab', False))
-                for (url, config) in self.get_extra_changelist_links(request)
-                if config.get('user_passes_test', lambda u: True)(request.user)
-            ]
-        )
-
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
         self.custom_changelist_actions(request)
-        self._add_extra_changelist_links(request, extra_context)
+        if not self.auto_update_template:
+            self._add_extra_changelist_links(request, extra_context)
         if self.default_filters:
             try:
                 test = request.META['HTTP_REFERER'].split(request.META['PATH_INFO'])
@@ -241,11 +293,12 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}
-        extra_context.update(
-            hide_save_buttons=self.hide_save_buttons(request, object_id)
-        )
-        self._add_extra_change_form_buttons(request, object_id, extra_context)
-        if request.method == 'POST' and extra_context['hide_save_buttons']:
+        if not self.auto_update_template:
+            self._add_extra_change_form_buttons(request, object_id, extra_context)
+            extra_context.update(
+                hide_save_buttons=self.hide_save_buttons(request, object_id)
+            )
+        if request.method == 'POST' and self.hide_save_buttons(request, object_id):
             raise PermissionDenied()
         response = super().change_view(request, object_id, form_url, extra_context)
         if request.method == 'POST':
@@ -268,9 +321,6 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
                 [x[0] for x in self.custom_fields] +
                 [x[0] for x in self.action_links])
 
-    def get_extra_changelist_links(self, request):
-        return self.extra_changelist_links
-
     def get_fieldset_section_exclusions(self, request, obj):
         return []
 
@@ -290,9 +340,40 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
             remove_from_fieldsets(fieldsets, field_exclusions)
         return fieldsets
 
+    def _get_common_mixin_js_data(self):
+        return dict(
+            app=self.model._meta.app_label,
+            model=self.model._meta.model_name,
+            enabled=self.auto_update_template
+        )
+
+    def _changelist_mixin_js_data(self, request):
+        return JsonResponse(dict(
+            **self._get_common_mixin_js_data(),
+            **super()._changelist_mixin_js_data(request)
+        ), encoder=CustomEncoder)
+
+    def _change_form_mixin_js_data(self, request, object_id=None):
+        return JsonResponse(dict(
+            **self._get_common_mixin_js_data(),
+            hide_save_buttons=self.hide_save_buttons(request, object_id),
+            **super()._change_form_mixin_js_data(request, object_id)
+        ), encoder=CustomEncoder)
+
     def get_urls(self):
         urls = super().get_urls()
-        my_urls = []
+        info = self.model._meta.app_label, self.model._meta.model_name
+        my_urls = [
+            path('<path:object_id>/change/dr-admin-mixin-js-data/',
+                 self._change_form_mixin_js_data,
+                 name='%s_%s-dr-admin-mixin-js-data_change' % info),
+            path('add/dr-admin-mixin-js-data/',
+                 self._change_form_mixin_js_data,
+                 name='%s_%s-dr-admin-mixin-js-data_add' % info),
+            path('dr-admin-mixin-js-data/',
+                 self._changelist_mixin_js_data,
+                 name='%s_%s_dr-admin-mixin-js-data-changelist' % info),
+        ]
 
         def get_action_link_view(_view_name, _attrs):
             def action_link_view(request, pk):
@@ -314,6 +395,9 @@ class EnhancedAdminMixin(admin.ModelAdmin, EnhancedBaseAdminMixin):
                                 self.admin_site.admin_view(get_action_link_view(view_name, attrs)),
                                 name=view_name))
         return my_urls + urls
+
+    class Media:
+        js = ['django_reusable/js/enhanced-admin-mixin.js']
 
 
 class ReadonlyAdmin(admin.ModelAdmin):

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.shortcuts import redirect
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils.safestring import mark_safe
 
 from django_reusable.admin.mixins import EnhancedAdminMixin
@@ -33,6 +33,21 @@ class PersonAdmin(EnhancedAdminMixin):
 
     list_display = fields = ['first_name', 'last_name', 'position', 'alert_name', 'say_hello', 'throw_error',
                              'person_manager', 'person_table']
+    """
+        List of tuples:
+        ('name', dict(btn_text, btn_class, stay_on_page, callback, user_passes_test, pk_passes_test))
+    """
+    extra_change_form_buttons = [
+        ('test', dict(btn_text='Test', btn_class='btn-warning', stay_on_page=True,
+                      callback=lambda *args: print("clicked", args)))
+    ]
+    """
+        List of tuples:
+        (url, dict(link_text, link_class, new_tab, user_passes_test))
+    """
+    extra_changelist_links = [
+        (reverse_lazy('person_manager'), dict(link_text='Manager', link_class='btn btn-warning', new_tab=True))
+    ]
 
 
 class MusicianConcertInline(admin.TabularInline):
