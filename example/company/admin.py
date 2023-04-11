@@ -3,12 +3,12 @@ from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils.safestring import mark_safe
 
-from django_reusable.admin.mixins import EnhancedAdminMixin
+from django_reusable.admin.mixins import EnhancedAdminMixin, EnhancedAdminInlineMixin
 from django_reusable.logging.loggers import PrintLogger
 from .models import Person, Album, Musician, MusicianConcert
 
 
-class MusicianInline(admin.TabularInline):
+class MusicianInline(EnhancedAdminInlineMixin, admin.TabularInline):
     model = Musician
     extra = 0
     readonly_fields = ['edit_concerts']
@@ -48,6 +48,9 @@ class PersonAdmin(EnhancedAdminMixin):
     extra_changelist_links = [
         (reverse_lazy('person_manager'), dict(link_text='Manager', link_class='btn btn-warning', new_tab=True))
     ]
+
+    def hide_save_buttons(self, request, object_id):
+        return object_id == '3'
 
 
 class MusicianConcertInline(admin.TabularInline):

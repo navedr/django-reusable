@@ -36,6 +36,9 @@ class EnhancedAdminInlineMixin(InlineModelAdmin):
             field.widget.attrs['class'] = 'inline-select2'
         return field
 
+    class Meta:
+        js = ['django_reusable/js/enhanced-admin-inline.js']
+
 
 class EnhancedBaseAdminMixin(BaseModelAdmin):
     user_field = 'created_by'

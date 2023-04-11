@@ -6,6 +6,7 @@ const EnhancedAdminMixin = {
                 if (!data.enabled) {
                     return;
                 }
+                $("body").addClass("enhanced-admin");
                 if (isChangelist) {
                     this.initChangelist(data);
                 } else if (isChangeForm) {
