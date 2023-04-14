@@ -17,6 +17,9 @@ class Musician(models.Model):
     instrument = models.CharField(max_length=100)
     concerts = models.ManyToManyField('Concert', through='MusicianConcert')
 
+    def __str__(self):
+        return str(self.person)
+
 
 class Album(models.Model):
     artist = models.ForeignKey(Musician, on_delete=models.CASCADE)
@@ -28,9 +31,15 @@ class Album(models.Model):
 class City(models.Model):
     name = models.CharField(max_length=100)
 
+    def __str__(self):
+        return self.name
+
 
 class Concert(models.Model):
     name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
 
 
 class MusicianConcert(models.Model):

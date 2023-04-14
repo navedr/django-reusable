@@ -549,7 +549,7 @@ def omit(input_dict: dict, keys_to_omit: []):
 
 
 def find(fn, iterable):
-    filtered = imap(fn, iterable)
+    filtered = ifilter(fn, iterable)
     return filtered[0] if filtered else None
 
 

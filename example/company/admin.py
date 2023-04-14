@@ -5,7 +5,7 @@ from django.utils.safestring import mark_safe
 
 from django_reusable.admin.mixins import EnhancedAdminMixin, EnhancedAdminInlineMixin
 from django_reusable.logging.loggers import PrintLogger
-from .models import Person, Album, Musician, MusicianConcert
+from .models import Person, Album, Musician, MusicianConcert, City, Concert
 
 
 class MusicianInline(EnhancedAdminInlineMixin, admin.TabularInline):
@@ -32,7 +32,7 @@ class PersonAdmin(EnhancedAdminMixin):
     inlines = [MusicianInline]
 
     list_display = fields = ['first_name', 'last_name', 'position', 'alert_name', 'say_hello', 'throw_error',
-                             'person_manager', 'person_table']
+                             'person_manager', 'person_table', 'test_ajax', 'nom']
     """
         List of tuples:
         ('name', dict(btn_text, btn_class, stay_on_page, callback, user_passes_test, pk_passes_test))
@@ -49,13 +49,29 @@ class PersonAdmin(EnhancedAdminMixin):
         (reverse_lazy('person_manager'), dict(link_text='Manager', link_class='btn btn-warning', new_tab=True))
     ]
 
+    """
+        List of tuples:
+        ('field_name', dict(btn_text, btn_class, additional_html, callback, short_desc))
+    """
+    ajax_action_fields = [
+        ('test_ajax', dict(btn_text='Test Ajax', additional_html='<b>hi</b>', callback=lambda *args: f"hola {args}!"))
+    ]
+    """
+        List of tuples:
+        ('field_name', lambda instance: instance.field.name, optional short_desc)
+    """
+    custom_fields = [
+        ('nom', lambda instance: instance.first_name)
+    ]
+
     def hide_save_buttons(self, request, object_id):
         return object_id == '3'
 
 
-class MusicianConcertInline(admin.TabularInline):
+class MusicianConcertInline(EnhancedAdminInlineMixin, admin.TabularInline):
     model = MusicianConcert
     extra = 0
+    select2_inlines_fields = ['city']
 
 
 class MusicianAdmin(admin.ModelAdmin):
@@ -69,3 +85,5 @@ class AlbumAdmin(admin.ModelAdmin):
 admin.site.register(Person, PersonAdmin)
 admin.site.register(Musician, MusicianAdmin)
 admin.site.register(Album, AlbumAdmin)
+admin.site.register(City)
+admin.site.register(Concert)

@@ -3,7 +3,7 @@ from copy import deepcopy
 from django.contrib import admin, messages
 from django.contrib.admin.options import BaseModelAdmin, InlineModelAdmin
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse, path
 from django.utils.safestring import mark_safe
@@ -13,10 +13,14 @@ from django_reusable.admin.utils import remove_from_fieldsets
 from django_reusable.admin.filters import SearchInFilter
 from django_reusable.constants import URLNames
 from django_reusable.forms.forms import EnhancedBaseInlineFormSet
-from django_reusable.utils import ifilter, CustomEncoder
+from django_reusable.utils import ifilter, CustomEncoder, find
 
 
 class EnhancedAdminInlineMixin(InlineModelAdmin):
+    """
+        Auto update template with all the extras and
+    """
+    auto_update_template = True
     select2_inlines_fields = []
     default_field_queryset = dict()
     limit_field_queryset_model_fields = dict()
@@ -33,11 +37,14 @@ class EnhancedAdminInlineMixin(InlineModelAdmin):
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         field = super().formfield_for_dbfield(db_field, request, **kwargs)
         if db_field.name in self.select2_inlines_fields:
-            field.widget.attrs['class'] = 'inline-select2'
+            field.widget.attrs['class'] = 'inline-select2' if not self.auto_update_template else 'dr-inline-select2'
         return field
 
-    class Meta:
-        js = ['django_reusable/js/enhanced-admin-inline.js']
+    @property
+    def media(self):
+        media = super().media
+        media._js.append('django_reusable/js/enhanced-admin-inline.js')
+        return media
 
 
 class EnhancedBaseAdminMixin(BaseModelAdmin):
@@ -48,19 +55,15 @@ class EnhancedBaseAdminMixin(BaseModelAdmin):
         if self.only_delete_owned and not request.user.has_perm('user.is_admin'):
             if not (obj and getattr(obj, self.user_field).id == request.user.id):
                 return False
-        return super(EnhancedBaseAdminMixin, self).has_delete_permission(request, obj)
+        return super().has_delete_permission(request, obj)
 
 
 class AjaxActionMixin:
-    admin_site = None
     """
         List of tuples:
         ('field_name', dict(btn_text, btn_class, additional_html, callback, short_desc))
     """
     ajax_action_fields = []
-
-    def get_readonly_fields(self, request, obj=None):
-        return list(super().get_readonly_fields(request, obj)) + [x[0] for x in self.get_ajax_action_fields()]
 
     def get_ajax_action_fields(self):
         return self.ajax_action_fields
@@ -68,34 +71,32 @@ class AjaxActionMixin:
     def get_callback_key(self, name):
         return f'{self.__class__.__name__}_{name}'
 
-    def register_callback(self, name, callback):
-        if not hasattr(self.admin_site, 'ajax_handler_callback_params'):
-            self.admin_site.ajax_handler_callback_params = {}
-        param_key = self.get_callback_key(name)
-        if not self.admin_site.ajax_handler_callback_params.get(param_key):
-            self.admin_site.ajax_handler_callback_params[param_key] = (self, callback)
+    def ajax_action_callback(self, request, name, object_id=None):
+        match = find(lambda x: x[0] == name, self.get_ajax_action_fields())
+        if match:
+            config = match[1]
+            callback = config.get('callback')
+            if callback:
+                result = callback(self, request, object_id)
+                return HttpResponse(result)
+        return HttpResponse(f'no callback params defined for {name}')
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
+    def _create_ajax_actions_fn(self):
+        info = self.model._meta.app_label, self.model._meta.model_name
         for name, config in self.get_ajax_action_fields():
             btn_text = config.get('btn_text', 'Button')
             btn_class = config.get('btn_class', 'btn btn-warning')
 
             @mark_safe
             def func(instance):
-                if not instance.id:
-                    return ''
-                url = reverse(f'django_reusable:{URLNames.AJAX_CALLBACK_HANDLER}',
-                              args=(instance.pk, self.get_callback_key(name)))
-                return (f'<button class="{btn_class} ajax-action-btn" data-url="{url}">{btn_text}</button>' +
+                url = reverse('admin:%s_%s-dr-ajax-action' % info, args=(name, instance.id))
+                return (f'<button class="{btn_class} dr-ajax-action-btn" data-url="{url}">'
+                        f'{btn_text}</button>' +
                         config.get('additional_html', ''))
 
             func.short_description = config.get('short_desc', btn_text)
             func.__name__ = name
             setattr(self, func.__name__, func)
-
-            self.register_callback(name, config['callback'])
 
 
 class ExtraChangelistLinksMixin:
@@ -107,9 +108,11 @@ class ExtraChangelistLinksMixin:
 
     def _get_applicable_extra_changelist_links(self, request):
         def _add_default_values(config):
-            config['link_class'] = config.get('link_class', 'btn-link')
-            config['link_text'] = config.get('link_text', 'Link')
-            config['new_tab'] = config.get('new_tab', False)
+            config.update(dict(
+                link_class=config.get('link_class', 'btn-link'),
+                link_text=config.get('link_text', 'Link'),
+                new_tab=config.get('new_tab', False)
+            ))
             return config
 
         return [(url, _add_default_values(config)) for (url, config) in self.get_extra_changelist_links(request)
@@ -145,8 +148,10 @@ class ExtraChangeFormButtonsMixin:
 
     def _get_applicable_extra_change_form_buttons(self, request, pk):
         def _add_default_values(config):
-            config['btn_class'] = config.get('btn_class', 'btn-primary')
-            config['btn_text'] = config.get('btn_text', 'Button')
+            config.update(dict(
+                btn_class=config.get('btn_class', 'btn-primary'),
+                btn_text=config.get('btn_text', 'Button')
+            ))
             return config
 
         return [
@@ -189,38 +194,14 @@ class ExtraChangeFormButtonsMixin:
         )
 
 
-class EnhancedAdminMixin(admin.ModelAdmin,
-                         EnhancedBaseAdminMixin,
-                         ExtraChangelistLinksMixin,
-                         ExtraChangeFormButtonsMixin):
-    """
-    Auto update template with all the extras and
-    """
-    auto_update_template = True
-    default_filters = []
-    search_in_choices = []
+class CustomFieldsMixin:
     """
         List of tuples:
         ('field_name', lambda instance: instance.field.name, optional short_desc)
     """
     custom_fields = []
-    """
-        List of tuples:
-        ('name', dict(btn_text, btn_class, callback, short_desc, custom_redirect))
-        Note: callback is called with args (instance)
-    """
-    action_links = []
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        if self.search_in_choices:
-            if not ifilter(lambda x: 'SearchInFilter' in str(x), self.list_filter):
-                filter_class = type('%sSearchInFilter' % self.__class__.__name__, (SearchInFilter,),
-                                    {'lookup_choices': sorted(self.search_in_choices, key=lambda x: x[1])})
-                self.list_filter.insert(0, filter_class)
-            self.base_search_fields = map(lambda xy: xy[0], self.search_in_choices)
-
+    def _create_custom_fields_fn(self):
         for f in self.custom_fields:
             func = f[1]
             func.allow_tags = True
@@ -229,6 +210,16 @@ class EnhancedAdminMixin(admin.ModelAdmin,
             func.__name__ = f[0]
             setattr(self, func.__name__, func)
 
+
+class ActionLinksMixin:
+    """
+        List of tuples:
+        ('name', dict(btn_text, btn_class, callback, short_desc, custom_redirect))
+        Note: callback is called with args (instance)
+    """
+    action_links = []
+
+    def _create_action_links_fn(self):
         def get_action_link_fn(name, attrs):
             func = lambda instance: mark_safe(
                 '<a class="btn {0}" href="{1}">{2}</a>'.format(
@@ -248,6 +239,36 @@ class EnhancedAdminMixin(admin.ModelAdmin,
                 continue
             func = get_action_link_fn(name, attrs)
             setattr(self, func.__name__, func)
+
+
+class EnhancedAdminMixin(admin.ModelAdmin,
+                         EnhancedBaseAdminMixin,
+                         ExtraChangelistLinksMixin,
+                         ExtraChangeFormButtonsMixin,
+                         AjaxActionMixin,
+                         CustomFieldsMixin,
+                         ActionLinksMixin):
+    """
+    Auto update template with all the extras and
+    """
+    auto_update_template = True
+    default_filters = []
+    search_in_choices = []
+
+    def _apply_search_in_choices(self):
+        if self.search_in_choices:
+            if not ifilter(lambda x: 'SearchInFilter' in str(x), self.list_filter):
+                filter_class = type('%sSearchInFilter' % self.__class__.__name__, (SearchInFilter,),
+                                    {'lookup_choices': sorted(self.search_in_choices, key=lambda x: x[1])})
+                self.list_filter.insert(0, filter_class)
+            self.base_search_fields = map(lambda xy: xy[0], self.search_in_choices)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._apply_search_in_choices()
+        self._create_custom_fields_fn()
+        self._create_action_links_fn()
+        self._create_ajax_actions_fn()
 
     def get_search_fields(self, request):
         search_fields = deepcopy(self.search_fields)
@@ -272,11 +293,7 @@ class EnhancedAdminMixin(admin.ModelAdmin,
     def custom_changelist_actions(self, request):
         pass
 
-    def changelist_view(self, request, extra_context=None):
-        extra_context = extra_context or {}
-        self.custom_changelist_actions(request)
-        if not self.auto_update_template:
-            self._add_extra_changelist_links(request, extra_context)
+    def _get_default_filters_redirect(self, request):
         if self.default_filters:
             try:
                 test = request.META['HTTP_REFERER'].split(request.META['PATH_INFO'])
@@ -291,8 +308,17 @@ class EnhancedAdminMixin(admin.ModelAdmin,
                         return HttpResponseRedirect("%s?%s" % (url, "&".join(filters)))
             except:
                 pass
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        self.custom_changelist_actions(request)
+        if not self.auto_update_template:
+            self._add_extra_changelist_links(request, extra_context)
+        default_filters_redirect = self._get_default_filters_redirect(request)
+        if default_filters_redirect:
+            return default_filters_redirect
         extra_context.update(self.get_changelist_extra_context(request) or {})
-        return super(EnhancedAdminMixin, self).changelist_view(request, extra_context)
+        return super().changelist_view(request, extra_context)
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}
@@ -322,7 +348,8 @@ class EnhancedAdminMixin(admin.ModelAdmin,
     def get_readonly_fields(self, request, obj=None):
         return (list(super().get_readonly_fields(request, obj)) +
                 [x[0] for x in self.custom_fields] +
-                [x[0] for x in self.action_links])
+                [x[0] for x in self.action_links] +
+                [x[0] for x in self.get_ajax_action_fields()])
 
     def get_fieldset_section_exclusions(self, request, obj):
         return []
@@ -376,6 +403,9 @@ class EnhancedAdminMixin(admin.ModelAdmin,
             path('dr-admin-mixin-js-data/',
                  self._changelist_mixin_js_data,
                  name='%s_%s_dr-admin-mixin-js-data-changelist' % info),
+            path('ajax-action/<path:name>/<path:object_id>/',
+                 self.ajax_action_callback,
+                 name='%s_%s-dr-ajax-action' % info),
         ]
 
         def get_action_link_view(_view_name, _attrs):

@@ -12,6 +12,7 @@ const EnhancedAdminMixin = {
                 } else if (isChangeForm) {
                     this.initChangeForm(data);
                 }
+                this.handleAjaxFields();
             }, this),
         });
     },
@@ -35,6 +36,22 @@ const EnhancedAdminMixin = {
                 );
             });
         }
+    },
+    handleAjaxFields: function () {
+        $(".dr-ajax-action-btn").click(function (e) {
+            console.log($(e.currentTarget));
+            $.ajax({
+                url: $(e.currentTarget).data("url"),
+                success: function (response) {
+                    alert(response);
+                },
+                error: function (response) {
+                    console.log(response);
+                    alert("Error while performing this action!");
+                },
+            });
+            return false;
+        });
     },
 };
 
