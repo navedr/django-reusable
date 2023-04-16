@@ -43,7 +43,14 @@ class EnhancedAdminInlineMixin(InlineModelAdmin):
     @property
     def media(self):
         media = super().media
-        media._js.append('django_reusable/js/enhanced-admin-inline.js')
+        js = 'django_reusable/js/enhanced-admin-inline.js'
+        if hasattr(media, '_js_lists'):
+            if media._js_lists:
+                media._js_lists[0].append(js)
+            else:
+                media._js_lists = [[js]]
+        else:
+            media._js.append(js)
         return media
 
 
