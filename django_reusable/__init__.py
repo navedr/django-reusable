@@ -1,5 +1,4 @@
-__version__ = (0, 6, 'beta')
-
+default_app_config = 'django_reusable.config.DjangoReusableConfig'
 from django_reusable.admin.theme import generate_admin_theme_colors
 
 

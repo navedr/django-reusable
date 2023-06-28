@@ -8,10 +8,9 @@ from django.shortcuts import redirect
 from django.urls import reverse, path
 from django.utils.safestring import mark_safe
 
+from django_reusable.admin.filters import SearchInFilter
 from django_reusable.admin.urls import ModelURLs
 from django_reusable.admin.utils import remove_from_fieldsets
-from django_reusable.admin.filters import SearchInFilter
-from django_reusable.constants import URLNames
 from django_reusable.forms.forms import EnhancedBaseInlineFormSet
 from django_reusable.utils import ifilter, CustomEncoder, find
 

@@ -5,3 +5,4 @@ wheel==0.37.1
 django-tables2==1.21.2
 django-crispy-forms==1.7.2
 django-formtools==2.1
+urllib3==1.26.16

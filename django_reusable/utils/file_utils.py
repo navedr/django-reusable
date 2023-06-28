@@ -1,6 +1,7 @@
 import os
 import re
 import unicodedata
+
 _filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
 _windows_device_files = (
     "CON",
@@ -55,10 +56,29 @@ def secure_filename(filename: str) -> str:
     # have to ensure that the target file is not such a filename.  In
     # this case we prepend an underline
     if (
-        os.name == "nt"
-        and filename
-        and filename.split(".")[0].upper() in _windows_device_files
+            os.name == "nt"
+            and filename
+            and filename.split(".")[0].upper() in _windows_device_files
     ):
         filename = f"_{filename}"
 
     return filename
+
+
+def generate_file_if_updated(name, path, content, logger):
+    """
+    Checks if file contents have changed. If so, re-generates the file.
+    :param name:
+    :param path:
+    :param content:
+    :param logger:
+    """
+    try:
+        with open(path, 'r') as f:
+            if f.read() == content:
+                return
+    except FileNotFoundError:
+        pass
+    with open(path, 'w') as f:
+        logger.info(f'{name} contents have changed. re-generating file...')
+        f.write(content)
