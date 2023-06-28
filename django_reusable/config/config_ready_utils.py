@@ -13,14 +13,9 @@ except ImportError:
 AUTO_GENERATED_COMMENT = '// This file is auto generated. Please do not edit. Your changes will be overwritten.\n'
 
 DAJAXICE_STATIC_TYPES = '''
-export const modules: DajaxiceModules = {};
+import { DajaxiceFn } from "dry-ux";
 
-export type Args<T> = {
-    args?: T;
-    skipAuthCheck?: boolean;
-};
-
-export type Fn<T> = (args?: Args<T>) => Promise<any>;\n\n'''
+export const modules: DajaxiceModules = {};\n\n'''
 
 
 def generate_app_path_enums():
@@ -53,7 +48,7 @@ def generate_dajaxice_types():
         return '{ ' + ', '.join([f"{arg}: any" for arg in args]) + ' }'
 
     def get_functions(v):
-        return ('{\n' + ';\n'.join([f'{" " * 8}{name}: Fn<{get_args_type(args)}>' for (name, args) in v])
+        return ('{\n' + ';\n'.join([f'{" " * 8}{name}: DajaxiceFn<{get_args_type(args)}>' for (name, args) in v])
                 + f';\n{" " * 4}' + '}')
 
     _modules = ';\n'.join([f'{" " * 4}{k}?: {get_functions(v)}' for (k, v) in
