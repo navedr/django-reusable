@@ -26,7 +26,7 @@ export type Fn<T> = (args?: Args<T>) => Promise<any>;\n\n'''
 def generate_app_path_enums():
     if not settings.REUSABLE_APP_URL_TS_INTERFACE_PATH:
         return
-    logger = PrintLogger("generate_app_path_enums")
+    logger = PrintLogger("[django_reusable] generate_app_path_enums")
     from django_reusable.urls.utils import get_all_urls
     app_urls = ',\n'.join([f'{" " * 4}"{k}" = "{v}"' for (k, v) in sorted(get_all_urls().items(),
                                                                           key=lambda x: x[0])])
@@ -38,7 +38,7 @@ def generate_dajaxice_types():
     if not settings.REUSABLE_DAJAXICE_TS_INTERFACE_PATH or not dajaxice_functions:
         return
     from django_reusable.urls.utils import get_all_urls
-    logger = PrintLogger("generate_dajaxice_types")
+    logger = PrintLogger("[django_reusable] generate_dajaxice_types")
     get_all_urls()  # needed for dajaxice to populate its registry
     modules = dict()
     for module, submodule in dajaxice_functions.modules.submodules.items():
