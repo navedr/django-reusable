@@ -555,3 +555,7 @@ def find(fn, iterable):
 
 def get_offset_range(minus=0, plus=0):
     return list(reversed([x*-1 for x in range(1, minus + 1)])) + [0] + list(range(1, plus + 1))
+
+
+def spaces(num):
+    return ' ' * num

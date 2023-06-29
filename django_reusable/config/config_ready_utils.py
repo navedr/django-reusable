@@ -3,6 +3,7 @@ import inspect
 from django.conf import settings
 
 from django_reusable.logging.loggers import PrintLogger
+from django_reusable.utils import spaces
 from django_reusable.utils.file_utils import generate_file_if_updated
 
 try:
@@ -19,18 +20,20 @@ export const modules: DajaxiceModules = {};\n\n'''
 
 
 def generate_app_path_enums():
-    if not settings.REUSABLE_APP_URL_TS_INTERFACE_PATH:
+    file_path = settings.REUSABLE_APP_URL_TS_INTERFACE_PATH
+    if not file_path:
         return
     logger = PrintLogger("[django_reusable] generate_app_path_enums")
     from django_reusable.urls.utils import get_all_urls
-    app_urls = ',\n'.join([f'{" " * 4}"{k}" = "{v}"' for (k, v) in sorted(get_all_urls().items(),
-                                                                          key=lambda x: x[0])])
-    content = AUTO_GENERATED_COMMENT + 'export enum AppPath {\n' + app_urls + '\n}\n'
-    generate_file_if_updated('app paths', settings.REUSABLE_APP_URL_TS_INTERFACE_PATH, content, logger)
+    app_urls = ',\n'.join([f'{spaces(4)}"{k}" = "{v}"' for (k, v) in sorted(get_all_urls().items(),
+                                                                            key=lambda x: x[0])])
+    content = AUTO_GENERATED_COMMENT + 'export enum AppPath {\n' + app_urls + ',\n}\n'
+    generate_file_if_updated('app paths', file_path, content, logger)
 
 
 def generate_dajaxice_types():
-    if not settings.REUSABLE_DAJAXICE_TS_INTERFACE_PATH or not dajaxice_functions:
+    file_path = settings.REUSABLE_DAJAXICE_TS_INTERFACE_PATH
+    if not file_path or not dajaxice_functions:
         return
     from django_reusable.urls.utils import get_all_urls
     logger = PrintLogger("[django_reusable] generate_dajaxice_types")
@@ -45,13 +48,13 @@ def generate_dajaxice_types():
     def get_args_type(args):
         if not args:
             return '{}'
-        return '{ ' + ', '.join([f"{arg}: any" for arg in args]) + ' }'
+        return '{ ' + '; '.join([f"{arg}: any" for arg in args]) + ' }'
 
     def get_functions(v):
-        return ('{\n' + ';\n'.join([f'{" " * 8}{name}: DajaxiceFn<{get_args_type(args)}>' for (name, args) in v])
-                + f';\n{" " * 4}' + '}')
+        return ('{\n' + ';\n'.join([f'{spaces(8)}{name}: DajaxiceFn<{get_args_type(args)}>' for (name, args) in v])
+                + f';\n{spaces(4)}' + '};')
 
-    _modules = ';\n'.join([f'{" " * 4}{k}?: {get_functions(v)}' for (k, v) in
+    _modules = ';\n'.join([f'{spaces(4)}{k}?: {get_functions(v)}' for (k, v) in
                            sorted(modules.items(), key=lambda x: x[0])])
-    content = AUTO_GENERATED_COMMENT + DAJAXICE_STATIC_TYPES + 'export type DajaxiceModules = {\n' + _modules + '\n}\n'
-    generate_file_if_updated('dajaxice types', settings.REUSABLE_DAJAXICE_TS_INTERFACE_PATH, content, logger)
+    content = AUTO_GENERATED_COMMENT + DAJAXICE_STATIC_TYPES + 'export type DajaxiceModules = {\n' + _modules + '\n};\n'
+    generate_file_if_updated('dajaxice types', file_path, content, logger)
