@@ -20,7 +20,7 @@ export const modules: DajaxiceModules = {};\n\n'''
 
 
 def generate_app_path_enums():
-    file_path = settings.REUSABLE_APP_URL_TS_INTERFACE_PATH
+    file_path = getattr(settings, 'REUSABLE_APP_URL_TS_INTERFACE_PATH', None)
     if not file_path:
         return
     logger = PrintLogger("[django_reusable] generate_app_path_enums")
@@ -32,7 +32,7 @@ def generate_app_path_enums():
 
 
 def generate_dajaxice_types():
-    file_path = settings.REUSABLE_DAJAXICE_TS_INTERFACE_PATH
+    file_path = getattr(settings, 'REUSABLE_DAJAXICE_TS_INTERFACE_PATH', None)
     if not file_path or not dajaxice_functions:
         return
     from django_reusable.urls.utils import get_all_urls
