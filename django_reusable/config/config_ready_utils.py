@@ -52,9 +52,9 @@ def generate_dajaxice_types():
 
     def get_functions(v):
         return ('{\n' + ';\n'.join([f'{spaces(8)}{name}: DajaxiceFn<{get_args_type(args)}>' for (name, args) in v])
-                + f';\n{spaces(4)}' + '};')
+                + f';\n{spaces(4)}' + '}')
 
     _modules = ';\n'.join([f'{spaces(4)}{k}?: {get_functions(v)}' for (k, v) in
-                           sorted(modules.items(), key=lambda x: x[0])])
+                           sorted(modules.items(), key=lambda x: x[0])]) + ';'
     content = AUTO_GENERATED_COMMENT + DAJAXICE_STATIC_TYPES + 'export type DajaxiceModules = {\n' + _modules + '\n};\n'
     generate_file_if_updated('dajaxice types', file_path, content, logger)
