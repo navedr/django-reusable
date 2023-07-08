@@ -1,4 +1,5 @@
 import inspect
+import re
 
 from django.conf import settings
 
@@ -24,9 +25,14 @@ def generate_app_path_enums():
     if not file_path:
         return
     logger = PrintLogger("[django_reusable] generate_app_path_enums")
+
+    def replace_variable(url):
+        new_url = re.sub(r"%\((\w+)\)s", r":\1", url)
+        return new_url
+
     from django_reusable.urls.utils import get_all_urls
-    app_urls = ',\n'.join([f'{spaces(4)}"{k}" = "{v}"' for (k, v) in sorted(get_all_urls().items(),
-                                                                            key=lambda x: x[0])])
+    app_urls = ',\n'.join([f'{spaces(4)}"{k}" = "{replace_variable(v)}"'
+                           for (k, v) in sorted(get_all_urls().items(), key=lambda x: x[0])])
     content = AUTO_GENERATED_COMMENT + 'export enum AppPath {\n' + app_urls + ',\n}\n'
     generate_file_if_updated('app paths', file_path, content, logger)
 
