@@ -53,11 +53,11 @@ def generate_dajaxice_types():
 
     def get_args_type(args):
         if not args:
-            return '{}'
-        return '{ ' + '; '.join([f"{arg}: any" for arg in args]) + ' }'
+            return ''
+        return '<{ ' + '; '.join([f"{arg}: any" for arg in args]) + ' }>'
 
     def get_functions(v):
-        return ('{\n' + ';\n'.join([f'{spaces(8)}{name}: DajaxiceFn<{get_args_type(args)}>' for (name, args) in v])
+        return ('{\n' + ';\n'.join([f'{spaces(8)}{name}: DajaxiceFn{get_args_type(args)}' for (name, args) in v])
                 + f';\n{spaces(4)}' + '}')
 
     _modules = ';\n'.join([f'{spaces(4)}{k}?: {get_functions(v)}' for (k, v) in
