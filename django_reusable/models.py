@@ -6,7 +6,6 @@ from collections import namedtuple
 from django.contrib.contenttypes.models import ContentType
 from django.core.paginator import Paginator, EmptyPage
 from django.db import models
-from django.urls import NoReverseMatch, reverse
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now
 

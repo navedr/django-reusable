@@ -74,8 +74,11 @@ class MusicianConcertInline(EnhancedAdminInlineMixin, admin.TabularInline):
     select2_inlines_fields = ['city']
 
 
-class MusicianAdmin(admin.ModelAdmin):
+class MusicianAdmin(EnhancedAdminMixin):
     inlines = [MusicianConcertInline]
+    extra_changelist_links = [
+        (reverse_lazy('musician_manager'), dict(link_text='Manager', link_class='btn btn-warning', new_tab=True))
+    ]
 
 
 class AlbumAdmin(admin.ModelAdmin):

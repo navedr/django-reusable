@@ -29,9 +29,10 @@ class MusicianCRUDView(CRUDViews):
     add_wizard_view_class = MusicianWizardView
     base_template = 'admin/base_site.html'
     name = 'musician_manager'
-    table_fields = ['first_name', 'last_name']
-    edit_fields = ['first_name', 'last_name']
-    object_title = 'Person'
+    table_fields = ['person', 'instrument', 'concerts']
+    object_title = 'Musician'
+    filters = ['person']
+    search_fields = ['instrument']
 
 
 class PersonTableView(SingleTableView):

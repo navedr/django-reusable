@@ -6,7 +6,7 @@ from django.conf.urls import url
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.exceptions import ImproperlyConfigured
-from django.db import transaction
+from django.db import transaction, models
 from django.db.models import QuerySet, Q
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy, include
@@ -15,6 +15,7 @@ from django.views.generic import CreateView, UpdateView, DeleteView
 from django_tables2 import SingleTableView, LinkColumn, A
 
 from django_reusable.django_tables2.table_mixins import EnhancedTable
+from django_reusable.utils import find
 from django_reusable.utils.user_utils import current_user_has_perms
 
 
@@ -39,7 +40,7 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
     additional_index_links = []
     add_wizard_view_class = None
     filters = []
-    filters_widget = None
+    filters_widget = forms.Select(attrs={'class': 'form-control'})
     search_fields = []
 
     @classmethod
@@ -236,29 +237,40 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
     def _get_filters_form(self):
         list_view = self
 
-        class FilterForm(forms.ModelForm):
+        class FilterForm(forms.Form):
             q = forms.CharField(required=False, label='',
-                                widget=forms.TextInput(attrs={'placeholder': 'Search'}))
+                                widget=forms.TextInput(attrs={'placeholder': 'Search', 'class': 'form-control'}))
+
+            def _get_filter_choices_for_model_field(self, field, model_field):
+                if isinstance(model_field, (models.ForeignKey, models.ManyToManyField)):
+                    return [(x.pk, str(x)) for x in model_field.related_model.objects.all()]
+                elif getattr(model_field, 'choices', []):
+                    return model_field.choices
+                else:
+                    distinct_values = list_view.model.objects.order_by(field).values_list(field, flat=True).distinct()
+                    return [(x, x) for x in distinct_values]
 
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
-                for field in self.fields:
-                    if field == 'q':
-                        continue
-                    distinct_values = self.Meta.model.objects.order_by(field).values_list(field, flat=True).distinct()
-                    self.fields[field] = forms.ChoiceField(choices=[('', self.fields[field].label)] +
-                                                                   [(x, x) for x in distinct_values],
-                                                           required=False, label='',
-                                                           widget=list_view.filters_widget)
-                for field, opts in [x for x in list_view.get_filters() if isinstance(x, tuple)]:
-                    self.fields[field] = forms.ChoiceField(choices=[('', opts.get('label', field.title()))]
-                                                                   + opts['get_choices'](),
-                                                           required=False, label='')
+                for _field in list_view.get_filters():
+                    if isinstance(_field, tuple):
+                        field, opts = _field
+                        self.fields[field] = forms.ChoiceField(choices=[('', opts.get('label', field.title()))]
+                                                                       + opts['get_choices'](),
+                                                               required=False, label='',
+                                                               widget=list_view.filters_widget)
+                    elif isinstance(_field, str):
+                        model_field = find(lambda f: f.name == _field, list_view.model._meta.fields)
+                        self.fields[_field] = forms.ChoiceField(choices=[('', model_field.verbose_name.title())] +
+                                                                        self._get_filter_choices_for_model_field(
+                                                                            _field, model_field),
+                                                                required=False, label='',
+                                                                widget=list_view.filters_widget)
+
                 if not list_view.get_search_fields():
                     del self.fields['q']
 
             class Meta:
-                model = self.model
                 fields = (['q'] if self.get_search_fields() else []) + [x for x in self.get_filters() if
                                                                         isinstance(x, str)]
 
@@ -277,7 +289,7 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
             additional_index_links=self.get_additional_index_links(),
             filters_form=filters_form,
             show_clear_filter=show_clear_filter,
-            show_search_button=not not self.get_filters()
+            show_search_button=self.get_filters() or self.get_search_fields()
         )
         return context_data
 
@@ -357,7 +369,7 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
 
     def get_additional_index_links(self):
         return self.additional_index_links
-    
+
     def _apply_filters(self, qs):
         filters = self.get_filters()
         search_fields = self.get_search_fields()
@@ -374,7 +386,7 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                     conditions = [Q(**{f'{x}__icontains': filters_form.cleaned_data['q']}) for x in search_fields]
                     qs = qs.filter(reduce(lambda x, y: x | y, conditions))
         return qs
-    
+
     def get_queryset(self):
         qs = super().get_queryset()
         qs = self._apply_filters(qs)

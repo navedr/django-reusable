@@ -1,15 +1,18 @@
 - extends base_template
 - load django_tables2
 
+block extrahead
+    | {{ filters_form.media }}
+
 block content
     .container-fluid.mbm.pl0.pr0.ptop
         h3.text-center {{ title }}
-        form.pull-left
+        form.pull-left.form-inline
             | {{ filters_form }}
             if show_search_button
-                button.btn.btn-info.btn-sm(type="submit", style="margin-bottom: 10px;") Search
+                button.btn.btn-info(type="submit", style="margin-left: 10px;") Search
             if show_clear_filter
-                a(href="?", style="margin-left: 10px") Reset filters
+                a(href="?", style="margin-left: 10px") Clear filters
         if allow_add or additional_index_links
             .pull-right.mbm
                 for link in additional_index_links
