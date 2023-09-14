@@ -21,6 +21,7 @@ class ManagerPersonView(CRUDViews):
 
     filters = ['position', ('gender', dict(label='Gender', get_choices=lambda: [('Male', 'Male'), ('Female', 'Female')],
                                            filter=filter_gender))]
+    show_filter_label = True
     search_fields = ['first_name', 'last_name']
 
 

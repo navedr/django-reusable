@@ -41,6 +41,7 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
     add_wizard_view_class = None
     filters = []
     filters_widget = forms.Select(attrs={'class': 'form-control'})
+    show_filter_label = False
     search_fields = []
 
     @classmethod
@@ -252,20 +253,21 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
 
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
+                common_attrs = dict(required=False, widget=list_view.filters_widget)
+                if not list_view.show_filter_label:
+                    common_attrs['label'] = ''
                 for _field in list_view.get_filters():
                     if isinstance(_field, tuple):
                         field, opts = _field
                         self.fields[field] = forms.ChoiceField(choices=[('', opts.get('label', field.title()))]
                                                                        + opts['get_choices'](),
-                                                               required=False, label='',
-                                                               widget=list_view.filters_widget)
+                                                               **common_attrs)
                     elif isinstance(_field, str):
                         model_field = find(lambda f: f.name == _field, list_view.model._meta.fields)
                         self.fields[_field] = forms.ChoiceField(choices=[('', model_field.verbose_name.title())] +
                                                                         self._get_filter_choices_for_model_field(
                                                                             _field, model_field),
-                                                                required=False, label='',
-                                                                widget=list_view.filters_widget)
+                                                                **common_attrs)
 
                 if not list_view.get_search_fields():
                     del self.fields['q']

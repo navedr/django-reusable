@@ -3,12 +3,20 @@
 
 block extrahead
     | {{ filters_form.media }}
+    style(type="text/css").
+        .crud-filter-field { display: inline-block; }
+        .crud-filter-field label { display: block; }
+        .crud-filter-form { display: flex; align-items: end; }
 
 block content
     .container-fluid.mbm.pl0.pr0.ptop
         h3.text-center {{ title }}
-        form.pull-left.form-inline
-            | {{ filters_form }}
+        form.crud-filter-form.pull-left.form-inline
+            for field in filters_form
+                .crud-filter-field
+                    if field.label_tag
+                        label {{ field.label_tag }}
+                    | {{ field }}
             if show_search_button
                 button.btn.btn-info(type="submit", style="margin-left: 10px;") Search
             if show_clear_filter
