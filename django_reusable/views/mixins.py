@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from functools import reduce
 
 from django import forms
 from django.conf.urls import url
@@ -6,7 +7,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.exceptions import ImproperlyConfigured
 from django.db import transaction
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy, include
 from django.utils.safestring import mark_safe
@@ -37,6 +38,9 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
     raise_exception = True
     additional_index_links = []
     add_wizard_view_class = None
+    filters = []
+    filters_widget = None
+    search_fields = []
 
     @classmethod
     def get_edit_url_name(cls):
@@ -229,15 +233,51 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
     def test_func(self):
         return self.has_perms()
 
+    def _get_filters_form(self):
+        list_view = self
+
+        class FilterForm(forms.ModelForm):
+            q = forms.CharField(required=False, label='',
+                                widget=forms.TextInput(attrs={'placeholder': 'Search'}))
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                for field in self.fields:
+                    if field == 'q':
+                        continue
+                    distinct_values = self.Meta.model.objects.order_by(field).values_list(field, flat=True).distinct()
+                    self.fields[field] = forms.ChoiceField(choices=[('', self.fields[field].label)] +
+                                                                   [(x, x) for x in distinct_values],
+                                                           required=False, label='',
+                                                           widget=list_view.filters_widget)
+                for field, opts in [x for x in list_view.get_filters() if isinstance(x, tuple)]:
+                    self.fields[field] = forms.ChoiceField(choices=[('', opts.get('label', field.title()))]
+                                                                   + opts['get_choices'](),
+                                                           required=False, label='')
+                if not list_view.get_search_fields():
+                    del self.fields['q']
+
+            class Meta:
+                model = self.model
+                fields = (['q'] if self.get_search_fields() else []) + [x for x in self.get_filters() if
+                                                                        isinstance(x, str)]
+
+        return FilterForm(self.request.GET)
+
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs) or {}
+        filters_form = self._get_filters_form()
+        show_clear_filter = filters_form.is_valid() and any([x for x in filters_form.cleaned_data.values() if x])
         context_data.update(
             title=self.title,
             add_url=self.get_add_url_name(),
             object_title=self.object_title,
             allow_add=self.get_allow_add(),
             base_template=self.base_template,
-            additional_index_links=self.get_additional_index_links()
+            additional_index_links=self.get_additional_index_links(),
+            filters_form=filters_form,
+            show_clear_filter=show_clear_filter,
+            show_search_button=not not self.get_filters()
         )
         return context_data
 
@@ -317,3 +357,31 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
 
     def get_additional_index_links(self):
         return self.additional_index_links
+    
+    def _apply_filters(self, qs):
+        filters = self.get_filters()
+        search_fields = self.get_search_fields()
+        if filters:
+            filters_form = self._get_filters_form()
+            if filters_form.is_valid():
+                filtered_values = {k: v for k, v in filters_form.cleaned_data.items() if
+                                   v != '' and k in filters and k != 'q'}
+                qs = qs.filter(**filtered_values)
+                for field, opts in [x for x in filters if isinstance(x, tuple)]:
+                    if 'filter' in opts and filters_form.cleaned_data[field]:
+                        qs = opts['filter'](qs, filters_form.cleaned_data[field])
+                if search_fields and filters_form.cleaned_data['q']:
+                    conditions = [Q(**{f'{x}__icontains': filters_form.cleaned_data['q']}) for x in search_fields]
+                    qs = qs.filter(reduce(lambda x, y: x | y, conditions))
+        return qs
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        qs = self._apply_filters(qs)
+        return qs
+
+    def get_filters(self):
+        return self.filters
+
+    def get_search_fields(self):
+        return self.search_fields

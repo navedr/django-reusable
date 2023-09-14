@@ -6,14 +6,22 @@ from .tables import PersonTable
 from .wizards import MusicianWizardView
 
 
+def filter_gender(qs, value):
+    return qs.filter(first_name='Naved') if value == 'Male' else qs.exclude(first_name='Naved')
+
+
 class ManagerPersonView(CRUDViews):
     base_template = 'admin/base_site.html'
     name = 'person_manager'
     model = Person
-    table_fields = ['first_name', 'last_name']
+    table_fields = ['first_name', 'last_name', 'position']
     edit_fields = ['first_name', 'last_name']
     object_title = 'Person'
     allow_edit = False
+
+    filters = ['position', ('gender', dict(label='Gender', get_choices=lambda: [('Male', 'Male'), ('Female', 'Female')],
+                                           filter=filter_gender))]
+    search_fields = ['first_name', 'last_name']
 
 
 class MusicianCRUDView(CRUDViews):
