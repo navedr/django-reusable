@@ -389,8 +389,8 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                     qs = qs.filter(reduce(lambda x, y: x | y, conditions))
         return qs
 
-    def get_queryset(self):
-        qs = super().get_queryset()
+    def get_table_data(self):
+        qs = super().get_table_data()
         qs = self._apply_filters(qs)
         return qs
 
