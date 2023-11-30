@@ -1,3 +1,14 @@
+
+:root {
+    --textColor: {{ theme_override_color.textColor }};
+    --linkColor: {{ theme_override_color.linkColor }};
+    --linkHoverColor: {{ theme_override_color.linkHoverColor }};
+    --linkVisitedColor: {{ theme_override_color.linkVisitedColor }};
+    --bgLevel1: {{ theme_override_color.bgColor1 }};
+    --bgLevel2: {{ theme_override_color.bgColor2 }};
+    --bgLevel3: {{ theme_override_color.bgColor3 }};
+}
+
 body {
     background-color: var(--bgLevel1);
     color: var(--textColor);
