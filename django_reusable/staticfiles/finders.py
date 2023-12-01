@@ -5,18 +5,14 @@ from django.contrib.staticfiles.finders import AppDirectoriesFinder
 from django.core.exceptions import SuspiciousOperation
 from django.core.files.storage import FileSystemStorage
 from django.template.loader import get_template
+from django.urls import reverse
 
 from django_reusable.admin.theme import THEME_COLORS
+from django_reusable.constants import URLNames
 
 FILE_OVERRIDES = {
-    'admin/js/core.js': dict(
-        callable='admin_core_js',
-        app='django.contrib.admin',
-    ),
-    'suit/css/suit.css': dict(
-        callable='suit_css',
-        app='suit',
-    ) if THEME_COLORS else None,
+    'admin/js/core.js': 'admin_core_js',
+    'suit/css/suit.css': 'suit_css' if THEME_COLORS else None,
 }
 
 
@@ -32,8 +28,8 @@ class VirtualStorage(FileSystemStorage):
         if path not in FILE_OVERRIDES:
             return ''
 
-        with open(original_path, 'r') as admin_file:
-            data = getattr(self, FILE_OVERRIDES[path]['callable'])(admin_file.read())
+        with open(original_path, 'r') as original_file:
+            data = getattr(self, FILE_OVERRIDES[path])(original_file.read())
 
         try:
             current_file = open(self._files_cache[path])
@@ -76,7 +72,8 @@ class VirtualStorage(FileSystemStorage):
 
 class DjangoReusableStorage(VirtualStorage):
     def admin_core_js(self, original_contents):
-        admin_utils_js = get_template(os.path.join('django_reusable', 'js', 'admin-utils.js')).render()
+        admin_utils_js = get_template(os.path.join('django_reusable', 'js', 'admin-utils.js')).render(
+            dict(admin_utils_url=reverse(f'django_reusable:{URLNames.ADMIN_UTILS_JS_CALLBACK}')))
         return original_contents + admin_utils_js
 
     def suit_css(self, original_contents):
@@ -88,7 +85,7 @@ class DjangoReusableStorage(VirtualStorage):
 
 class DjangoReusableFinder(AppDirectoriesFinder):
     def find_in_app(self, app, path):
-        if FILE_OVERRIDES.get(path):
-            original_path = super().find_in_app(FILE_OVERRIDES[path]['app'], path)
+        original_path = super().find_in_app(app, path)
+        if FILE_OVERRIDES.get(path) and original_path:
             return DjangoReusableStorage().path(path, original_path)
-        return super().find_in_app(app, path)
+        return original_path

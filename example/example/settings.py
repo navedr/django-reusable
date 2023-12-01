@@ -145,7 +145,8 @@ REUSABLE_SHOW_ERRORS_LINK = True
 REUSABLE_ENABLE_SUIT_MULTI_ADMIN = True
 REUSABLE_SHOW_ERRORS_PERM = lambda user: user.is_superuser
 REUSABLE_ADMIN_THEME_OVERRIDE = {
-    'background_color': '#3b3a3a',
-    'text_color': '#ffffff',
-    'link_color': '#000000'
+    # 'background_color': '#3b3a3a',
+    # 'text_color': '#ffffff',
+    # 'link_color': '#000000'
 }
+REUSABLE_READONLY_PERM_PREFIX = 'readonly_'

@@ -11,7 +11,6 @@
 
 body {
     background-color: var(--bgLevel1);
-    color: var(--textColor);
 }
 
 a {
@@ -26,6 +25,7 @@ a:visited {
     color: var(--linkVisitedColor);
 }
 
+body,
 body table td,
 body table th,
 .footer,
@@ -38,17 +38,11 @@ body table th,
 
 body table td,
 body table th {
-    background: var(--bgLevel2)!important;
     text-shadow: none !important;
 }
 
 #wrap {
     background: transparent;
-}
-
-.footer,
-.header {
-    background: var(--bgLevel2);
 }
 
 .login #content-main h1,
@@ -57,8 +51,12 @@ body table th {
 .breadcrumb,
 .box, .well,
 .left-nav > ul > li.active > a,
-.left-nav > ul > li ul li a:hover {
-    background: var(--bgLevel2);
+.left-nav > ul > li ul li a:hover,
+.footer,
+.header,
+body table td,
+body table th {
+    background: var(--bgLevel2)!important;
 }
 
 .login #content-main,

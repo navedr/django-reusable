@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.contrib import admin
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -22,3 +23,19 @@ def ajax_callback_handler(request, name, pk):
 @csrf_exempt
 def is_user_authenticated(request):
     return JsonResponse(request.user.is_authenticated, safe=False)
+
+
+@csrf_exempt
+def admin_utils_callback(request):
+    app = request.POST.get('app')
+    model = request.POST.get('model')
+    is_changelist = request.POST.get('isChangelist') == 'true'
+    is_change_form = request.POST.get('isChangeForm') == 'true'
+    response = dict()
+    if is_change_form:
+        response.update(
+            hide_save_buttons=getattr(settings, 'REUSABLE_READONLY_PERM_PREFIX', None) and
+                not request.user.is_superuser and
+                request.user.has_perm(f'{app}.{settings.REUSABLE_READONLY_PERM_PREFIX}{model}')
+        )
+    return JsonResponse(response, safe=False)
