@@ -133,7 +133,7 @@ LOGIN_URL = '/login/'
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = '/Users/narangwa/www'
+STATIC_ROOT = '/Users/narangwa/www/static/django-reusable/'
 
 STATICFILES_FINDERS = (
     'django_reusable.staticfiles.finders.DjangoReusableFinder',
