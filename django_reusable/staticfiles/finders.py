@@ -66,7 +66,6 @@ class VirtualStorage(FileSystemStorage):
     def path(self, name, original_path=''):
         if not original_path and self.original_storage:
             original_path = self.original_storage.path(name)
-            print(original_path)
         try:
             path = self.get_or_create_file(name, original_path)
         except ValueError:
