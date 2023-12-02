@@ -1,6 +1,21 @@
 const DjangoReusableAdminUtils = {
     init: function ({ isChangelist, isChangeForm }) {
-        const [_, app, model] = location.pathname.split("/");
+        let app, model;
+        const paths = location.pathname.split("/").filter(s => !!s);
+        if (isChangelist) {
+            app = paths[paths.length - 2];
+            model = paths[paths.length - 1];
+        } else if (isChangeForm) {
+            if (paths[paths.length - 1] === "add") {
+                // host/<app>/<model>/add/
+                app = paths[paths.length - 3];
+                model = paths[paths.length - 2];
+            } else {
+                // host/<app>/<model>/<pk>/change/
+                app = paths[paths.length - 4];
+                model = paths[paths.length - 3];
+            }
+        }
         $.ajax({
             url: "{{ admin_utils_url }}",
             method: "POST",

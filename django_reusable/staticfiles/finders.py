@@ -22,14 +22,14 @@ class VirtualStorage(FileSystemStorage):
 
     def __init__(self, *args, **kwargs):
         self._files_cache = {}
-        self.original_storage = kwargs.pop('original_storage', None)
+        self.get_original_path = kwargs.pop('get_original_path', None)
         super(VirtualStorage, self).__init__(*args, **kwargs)
 
-    def get_or_create_file(self, path, original_path):
+    def get_or_create_file(self, path):
         if path not in FILE_OVERRIDES:
             return ''
 
-        with open(original_path, 'r') as original_file:
+        with open(self.get_original_path(), 'r') as original_file:
             data = getattr(self, FILE_OVERRIDES[path])(original_file.read())
 
         try:
@@ -63,12 +63,9 @@ class VirtualStorage(FileSystemStorage):
                     files.append(f)
         return folders, files
 
-    def path(self, name, original_path=''):
-        if not original_path and self.original_storage:
-            original_path = self.original_storage.path(name)
-            print(original_path)
+    def path(self, name):
         try:
-            path = self.get_or_create_file(name, original_path)
+            path = self.get_or_create_file(name)
         except ValueError:
             raise SuspiciousOperation("Attempted access to '%s' denied." % name)
         return os.path.normpath(path)
@@ -91,12 +88,11 @@ class DjangoReusableFinder(AppDirectoriesFinder):
     def find_in_app(self, app, path):
         original_path = super().find_in_app(app, path)
         if FILE_OVERRIDES.get(path) and original_path:
-            return DjangoReusableStorage().path(path, original_path)
+            return DjangoReusableStorage(get_original_path=lambda: original_path).path(path)
         return original_path
 
     def list(self, ignore_patterns):
         for path, storage in super().list(ignore_patterns):
-            if FILE_OVERRIDES.get(path):
-                yield path, DjangoReusableStorage(original_storage=storage)
-            else:
-                yield path, storage
+            yield (path,
+                   DjangoReusableStorage(get_original_path=lambda: storage.path(path))
+                   if FILE_OVERRIDES.get(path) else storage)
