@@ -1,23 +1,22 @@
 const EnhancedAdminMixin = {
-    init: function ({ isChangelist, isChangeForm }) {
-        $.ajax({
-            url: `${location.pathname}dr-admin-mixin-js-data`,
-            success: $.proxy(function (data) {
-                if (!data.enabled) {
-                    return;
-                }
-                $("body").addClass("enhanced-admin");
-                if (isChangelist) {
-                    this.initChangelist(data);
-                } else if (isChangeForm) {
-                    this.initChangeForm(data);
-                }
-                this.handleAjaxFields();
-            }, this),
+    init: function ({isChangelist, isChangeForm}) {
+        const self = this;
+        fetch(`${location.pathname}dr-admin-mixin-js-data`)
+            .then(response => response.json()).then(data => {
+            if (!data.enabled) {
+                return;
+            }
+            $("body").addClass("enhanced-admin");
+            if (isChangelist) {
+                self.initChangelist(data);
+            } else if (isChangeForm) {
+                self.initChangeForm(data);
+            }
+            self.handleAjaxFields();
         });
     },
     initChangelist: function (data) {
-        data.extra_links.forEach(({ url, config: { link_class, new_tab, link_text } }) => {
+        data.extra_links.forEach(({url, config: {link_class, new_tab, link_text}}) => {
             $("ul.breadcrumb").append(
                 `<li>
                     <span class="divider">|</span>
@@ -30,7 +29,7 @@ const EnhancedAdminMixin = {
         if (data.hide_save_buttons) {
             $(".submit-row").remove();
         } else {
-            data.extra_submit_buttons.forEach(({ name, config: { btn_text, btn_class } }) => {
+            data.extra_submit_buttons.forEach(({name, config: {btn_text, btn_class}}) => {
                 $(".submit-row").append(
                     `<button name="__${name}" type="submit" class="btn ${btn_class}">${btn_text}</button>`,
                 );
@@ -39,17 +38,13 @@ const EnhancedAdminMixin = {
     },
     handleAjaxFields: function () {
         $(".dr-ajax-action-btn").click(function (e) {
-            console.log($(e.currentTarget));
-            $.ajax({
-                url: $(e.currentTarget).data("url"),
-                success: function (response) {
-                    alert(response);
-                },
-                error: function (response) {
+            fetch($(e.currentTarget).data("url"))
+                .then(response => response.text())
+                .then(response => alert(response))
+                .catch(response => {
                     console.log(response);
-                    alert("Error while performing this action!");
-                },
-            });
+                    alert("Error while performing this action!")
+                });
             return false;
         });
     },

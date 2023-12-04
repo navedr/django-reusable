@@ -27,10 +27,11 @@ def is_user_authenticated(request):
 
 @csrf_exempt
 def admin_utils_callback(request):
-    app = request.POST.get('app')
-    model = request.POST.get('model')
-    is_changelist = request.POST.get('isChangelist') == 'true'
-    is_change_form = request.POST.get('isChangeForm') == 'true'
+    payload = json.loads(request.body)
+    app = payload.get('app')
+    model = payload.get('model')
+    is_changelist = payload.get('isChangelist')
+    is_change_form = payload.get('isChangeForm')
     response = dict()
     if is_change_form:
         response.update(

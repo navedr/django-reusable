@@ -1,5 +1,5 @@
 const DjangoReusableAdminUtils = {
-    init: function ({ isChangelist, isChangeForm }) {
+    init: function ({isChangelist, isChangeForm}) {
         let app, model;
         const paths = location.pathname.split("/").filter(s => !!s);
         if (isChangelist) {
@@ -16,26 +16,25 @@ const DjangoReusableAdminUtils = {
                 model = paths[paths.length - 3];
             }
         }
-        $.ajax({
-            url: "{{ admin_utils_url }}",
-            method: "POST",
-            data: {
+        const self = this;
+        fetch("{{ admin_utils_url }}", {
+            method: 'POST',
+            body: JSON.stringify({
                 app,
                 model,
                 isChangelist,
                 isChangeForm,
-            },
-            success: $.proxy(function (data) {
-                $("body").addClass("django-reusable-admin");
-                if (isChangelist) {
-                    this.initChangelist(data);
-                } else if (isChangeForm) {
-                    this.initChangeForm(data);
-                }
-            }, this),
+            })
+        }).then(response => response.json()).then(data => {
+            if (isChangelist) {
+                self.initChangelist(data);
+            } else if (isChangeForm) {
+                self.initChangeForm(data);
+            }
         });
     },
-    initChangelist: function (data) {},
+    initChangelist: function (data) {
+    },
     initChangeForm: function (data) {
         if (data.hide_save_buttons) {
             $(".submit-row").remove();
