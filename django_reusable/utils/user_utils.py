@@ -46,15 +46,16 @@ def current_user_has_perms(perms, exclude_superuser=False):
     return user_has_perms(current_user(), perms, exclude_superuser)
 
 
-def get_users_for_perms(perms):
+def get_users_for_perms(perms, user_filter=None):
     users = set()
+    user_filter = user_filter or {}
     for perm in perms:
         app_label, perm_name = perm.split('.')
         permission = Permission.objects.filter(content_type__app_label=app_label, codename=perm_name).first()
         if permission:
-            users.update(list(permission.user_set.all()))
+            users.update(list(permission.user_set.filter(**user_filter)))
             for group in permission.group_set.all():
-                users.update(list(group.user_set.all()))
+                users.update(list(group.user_set.filter(**user_filter)))
     return list(users)
 
 
