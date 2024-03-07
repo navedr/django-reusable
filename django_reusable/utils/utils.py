@@ -26,6 +26,8 @@ from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView
 from pytz import timezone, utc
 
+from .conversion import is_number, is_int
+
 locale.setlocale(locale.LC_ALL, '')
 
 
@@ -36,25 +38,6 @@ def global_request():
 
 def current_user():
     return global_request().user
-
-
-def is_int(s):
-    try:
-        if math.floor(float(s)) == float(s):
-            return True
-        else:
-            return False
-    except Exception:
-        return False
-
-
-def is_number(s):
-    try:
-        float(s)
-        return True
-    except Exception:
-        return False
-
 
 def truncate(value, digits):
     return int(value * math.pow(10, digits)) / math.pow(10, digits)
