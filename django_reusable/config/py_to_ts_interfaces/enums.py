@@ -6,6 +6,11 @@ class EnumElement:
     name: str
     value: str
 
+    @staticmethod
+    def has_tab(line: str):
+        return line.lstrip(" ") != line
+
+
     def __init__(self, line: str):
         name_and_value = line.strip().split(" = ")
         self.name = name_and_value[0]
@@ -13,7 +18,7 @@ class EnumElement:
 
     def get_typescript(self) -> str:
         """Return the element in typescript syntax (including indentation)."""
-        return "    {0} = \'{1}\',".format(self.name, self.value)
+        return "    {0} = \'{1}\',".format(self.name, self.value.replace("'", ""))
 
 
 class EnumDefinition:
@@ -27,8 +32,12 @@ class EnumDefinition:
                       not line.startswith("        ")
                       ]
 
-        self.name = definition[0].removeprefix("class ").removesuffix("(Enum):")
-        self.elements = [EnumElement(line) for line in definition[1:]]
+        self.name = definition[0].lstrip("class ").rstrip("(Enum):")
+        self.elements = []
+        for line in definition[1:]:
+            if not EnumElement.has_tab(line):
+                break
+            self.elements.append(EnumElement(line))
 
     def get_typescript(self) -> str:
         """Return the enum in typescript syntax (including indentation)."""

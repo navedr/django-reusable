@@ -12,7 +12,7 @@ class InterfaceField:
 
     def __init__(self, line: str):
         self.is_nullable = line.endswith(" = None") or "Union[" in line or "Optional[" in line
-        line = line.removesuffix(" = None")
+        line = line.rstrip(" = None")
 
         self.name, self.python_type = self.get_name_and_type(line)
 
@@ -22,11 +22,11 @@ class InterfaceField:
         name, python_type = line.strip().split(": ")
         name = to_camel_case(name)
         if "Union[" in python_type:
-            python_type = python_type.removeprefix("Union[None, ").removeprefix("Union[")
-            python_type = python_type.removesuffix("]").removesuffix(", None")
+            python_type = python_type.lstrip("Union[None, ").lstrip("Union[")
+            python_type = python_type.rstrip("]").rstrip(", None")
         if "Optional[" in python_type:
-            python_type = python_type.removeprefix("Optional[")
-            python_type = python_type.removesuffix("]").removesuffix(", None")
+            python_type = python_type.lstrip("Optional[")
+            python_type = python_type.rstrip("]").rstrip(", None")
         return name, python_type
 
     def get_typescript(self) -> str:
@@ -43,7 +43,7 @@ class InterfaceDefinition:
     fields: List[InterfaceField]
 
     def __init__(self, definition: List[str]):
-        self.name = definition[0].removeprefix("class ").strip(":")
+        self.name = definition[0].lstrip("class ").strip(":")
         self.fields = [InterfaceField(line) for line in definition[1:]]
 
     def get_typescript(self) -> str:

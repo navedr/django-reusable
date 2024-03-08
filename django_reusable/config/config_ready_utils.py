@@ -3,6 +3,7 @@ import re
 
 from django.conf import settings
 
+from django_reusable.config.py_to_ts_interfaces.__main__ import python_to_typescript_file
 from django_reusable.logging.loggers import PrintLogger
 from django_reusable.utils import spaces
 from django_reusable.utils.file_utils import generate_file_if_updated
@@ -79,4 +80,14 @@ def generate_dajaxice_types():
 
 
 def convert_py_to_ts_interfaces():
-    config = getattr(settings, 'REUSABLE_DAJAXICE_TS_INTERFACE_PATH', None)
+    map_config = getattr(settings, 'REUSABLE_PY_TO_TS_MAP', {})
+    if not map_config:
+        return
+    output = {}
+    logger = PrintLogger(f"[django_reusable] convert_py_to_ts_interfaces")
+    for py_file, ts_file in map_config.items():
+        with open(py_file, 'r') as f:
+            python_code = f.read()
+            output[ts_file] = output.get(ts_file, AUTO_GENERATED_COMMENT) + python_to_typescript_file(python_code) + '\n'
+    for ts_file, contents in output.items():
+        generate_file_if_updated(f'py to ts[{ts_file}]', ts_file, contents, logger)

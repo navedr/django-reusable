@@ -26,7 +26,7 @@ def python_to_typescript_type(python_type: str) -> str:
         return python_to_typescript_type_map[python_type]
     except KeyError:
         if python_type.startswith("Dict["):
-            python_type = python_type.removeprefix("Dict[").removesuffix("]").replace(" ", "")
+            python_type = python_type.lstrip("Dict[").rstrip("]").replace(" ", "")
             # This part handles nested dicts
             py_type_1, py_type_2 = python_type.split(",", 1)
             ts_type_1 = python_to_typescript_type(py_type_1)
@@ -34,7 +34,7 @@ def python_to_typescript_type(python_type: str) -> str:
             return f"Record<{ts_type_1}, {ts_type_2}>"
         elif python_type.startswith("List["):
             # This means the list contains an unknown type - likely an enum
-            python_type = python_type.removeprefix("List[").removesuffix("]")
+            python_type = python_type.lstrip("List[").rstrip("]")
             return f"{python_type}[]"
         else:
             # This should mean it is an enum

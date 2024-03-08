@@ -1,8 +1,8 @@
 import os
-import sys
+import traceback
 from typing import Union
-import argparse
 
+from django_reusable.logging.loggers import PrintLogger
 from .enums import EnumDefinition
 from .file_io import write_file, read_file
 from .interfaces import InterfaceDefinition
@@ -11,6 +11,7 @@ from .utils import is_class_definition, is_string_definition
 
 
 def python_to_typescript_file(python_code: str) -> str:
+    logger = PrintLogger("python_to_typescript_file")
     """
     Convert python enum and dataclass definitions to equivalent typescript code.
 
@@ -31,12 +32,16 @@ def python_to_typescript_file(python_code: str) -> str:
     # convert each group into either an EnumDefinition or InterfaceDefinition object
     processed_definitions: list[Union[EnumDefinition, InterfaceDefinition, StringDefinition]] = []
     for definition in definition_groups:
-        if definition[0].endswith("(Enum):"):
-            processed_definitions.append(EnumDefinition(definition))
-        elif definition[0].endswith("\""):
-            processed_definitions.append(StringDefinition(definition))
-        else:
-            processed_definitions.append(InterfaceDefinition(definition))
+        try:
+            if definition[0].endswith("(Enum):"):
+                processed_definitions.append(EnumDefinition(definition))
+            elif definition[0].endswith("\""):
+                processed_definitions.append(StringDefinition(definition))
+            else:
+                processed_definitions.append(InterfaceDefinition(definition))
+        except:
+            logger.error("error while processing definition")
+            traceback.print_exc()
 
     # construct final output
     typescript_output = ""
@@ -70,16 +75,3 @@ def python_to_typescript_folder(input_path: str, output_path: str) -> None:
 
             write_file(typescript_output, os.path.join(output_path, file[:-3] + ".ts"))
 
-
-def main():
-    """Main script."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument("input_folder", help="The path to the folder of python files to be converted")
-    parser.add_argument("output_folder", help="The path to the folder to output the typescript files to")
-    args = parser.parse_args()
-
-    python_to_typescript_folder(args.input_folder, args.output_folder)
-
-
-if __name__ == "__main__":
-    sys.exit(main())
