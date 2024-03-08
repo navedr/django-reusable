@@ -76,3 +76,7 @@ def generate_dajaxice_types():
                            sorted(modules.items(), key=lambda x: x[0])]) + ';'
     content = AUTO_GENERATED_COMMENT + DAJAXICE_STATIC_TYPES + 'export type DajaxiceModules = {\n' + _modules + '\n};\n'
     generate_file_if_updated('dajaxice types', file_path, content, logger)
+
+
+def convert_py_to_ts_interfaces():
+    config = getattr(settings, 'REUSABLE_DAJAXICE_TS_INTERFACE_PATH', None)
