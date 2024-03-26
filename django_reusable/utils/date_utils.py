@@ -130,3 +130,10 @@ def get_adjacent_dates(ref_date=None, plus=0, minus=0):
     day_range = get_offset_range(minus, plus)
     day = ref_date or datetime.today()
     return [day + timedelta(days=offset) for offset in day_range]
+
+
+def is_date(_input: str, _format: str):
+    try:
+        return bool(datetime.strptime(_input, _format))
+    except ValueError:
+        return False
