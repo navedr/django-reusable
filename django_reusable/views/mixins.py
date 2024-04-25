@@ -70,7 +70,6 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
         list_view_instance = cls(**initkwargs)
 
         class ViewCommon(UserPassesTestMixin):
-            success_url = reverse_lazy(cls.get_list_url_name())
             model = cls.model
             raise_exception = True
 
@@ -110,6 +109,9 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                 messages.info(self.request, f"New {cls.object_title} '{self.object}' created successfully!")
                 return response
 
+            def get_success_url(self):
+                return list_view_instance.get_success_url("create", self.object.pk)
+
         class CRUDUpdateView(EditViewCommon, UpdateView):
             def form_valid(self, form):
                 response = super().form_valid(form)
@@ -138,6 +140,9 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                     return super().get(request, *args, **kwargs)
                 return super().post(request, *args, **kwargs)
 
+            def get_success_url(self):
+                return list_view_instance.get_success_url("update", self.object.pk)
+
         class CRUDDeleteView(ViewCommon, DeleteView):
             template_name = 'django_reusable/crud/delete.pug'
 
@@ -152,6 +157,9 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                 response = super().delete(request, *args, **kwargs)
                 messages.info(self.request, f"{cls.object_title} '{self.object}' has been deleted!")
                 return response
+
+            def get_success_url(self):
+                return list_view_instance.get_success_url("delete", self.object.pk)
 
         if cls.name == 'crud-view' or not cls.name:
             raise ImproperlyConfigured("{name} property needs to be set")
@@ -399,3 +407,6 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
 
     def get_search_fields(self):
         return self.search_fields
+
+    def get_success_url(self, type, pk):
+        return reverse_lazy(self.get_list_url_name())
