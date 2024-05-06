@@ -13,5 +13,4 @@ tr.dynamic-form-row
       | {{ field.errors.as_ul }}
       - include 'bootstrap/field.html' with form_show_labels=False
   td
-    button.btn.btn-sm.btn-danger.remove-form-row(type="button")
-      i.icon-trash.icon-white
+    button.btn.btn-sm.btn-danger.remove-form-row(type="button") &times;

@@ -29,6 +29,7 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
     allow_table_ordering = True
     name = 'crud-view'
     edit_fields = []
+    add_fields = []
     allow_edit = True
     allow_delete = True
     allow_add = True
@@ -89,7 +90,6 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
 
         class EditViewCommon(ViewCommon):
             template_name = 'django_reusable/crud/create_or_update.pug'
-            fields = cls.edit_fields
 
             def get_form_class(self):
                 if cls.edit_form_class:
@@ -104,6 +104,8 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                 return context_data
 
         class CRUDCreateView(EditViewCommon, CreateView):
+            fields = cls.add_fields or cls.edit_fields
+
             def form_valid(self, form):
                 response = super().form_valid(form)
                 messages.info(self.request, f"New {cls.object_title} '{self.object}' created successfully!")
@@ -113,6 +115,8 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                 return list_view_instance.get_success_url("create", self.object.pk)
 
         class CRUDUpdateView(EditViewCommon, UpdateView):
+            fields = cls.edit_fields
+
             def form_valid(self, form):
                 response = super().form_valid(form)
                 messages.info(self.request, f"{cls.object_title} '{self.object}' has been updated!")
@@ -362,9 +366,6 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
 
     def get_table_fields(self):
         return self.table_fields
-
-    def get_edit_fields(self):
-        return self.edit_fields
 
     def get_table_class(self):
         class CRUDViewTable(EnhancedTable):
