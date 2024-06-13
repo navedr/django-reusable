@@ -7,6 +7,7 @@ import random
 import uuid
 from collections import namedtuple, OrderedDict
 from datetime import datetime, date
+from tempfile import NamedTemporaryFile
 
 from django import forms
 from django.conf import settings
@@ -38,6 +39,7 @@ def global_request():
 
 def current_user():
     return global_request().user
+
 
 def truncate(value, digits):
     return int(value * math.pow(10, digits)) / math.pow(10, digits)
@@ -179,7 +181,6 @@ def query_to_lists(query_string, col_index=None, params=None):
 
 
 def field_html(field, name):
-
     class TempForm(forms.Form):
         def __init__(self, *args, **kwargs):
             super(TempForm, self).__init__(*args, **kwargs)
@@ -213,6 +214,16 @@ class TempFiles(object):
 
     def __enter__(self):
         return self.files
+
+
+class TempFilesFromBytes(TempFiles):
+    def __init__(self, *file_bytes):
+        files = []
+        for file_byte in file_bytes:
+            f = NamedTemporaryFile()
+            f.write(file_byte)
+            f.close()
+        super().__init__(*files)
 
 
 class TempFile(object):
@@ -501,6 +512,7 @@ def get_json_bytes(data):
     def converter(o):
         if isinstance(o, datetime) or isinstance(o, date):
             return str(o)
+
     file_path = get_temp_file_path()
     with open(file_path, 'w') as f:
         f.write(json.dumps(data, default=converter, indent=2))
@@ -537,7 +549,7 @@ def find(fn, iterable):
 
 
 def get_offset_range(minus=0, plus=0):
-    return list(reversed([x*-1 for x in range(1, minus + 1)])) + [0] + list(range(1, plus + 1))
+    return list(reversed([x * -1 for x in range(1, minus + 1)])) + [0] + list(range(1, plus + 1))
 
 
 def spaces(num):

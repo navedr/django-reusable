@@ -5,6 +5,8 @@ from django.contrib import admin
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
+from ..logging.loggers import PrintLogger
+
 
 @csrf_exempt
 def ajax_callback_handler(request, name, pk):
@@ -36,7 +38,25 @@ def admin_utils_callback(request):
     if is_change_form:
         response.update(
             hide_save_buttons=getattr(settings, 'REUSABLE_READONLY_PERM_PREFIX', None) and
-                not request.user.is_superuser and
-                request.user.has_perm(f'{app}.{settings.REUSABLE_READONLY_PERM_PREFIX}{model}')
+                              not request.user.is_superuser and
+                              request.user.has_perm(f'{app}.{settings.REUSABLE_READONLY_PERM_PREFIX}{model}')
         )
     return JsonResponse(response, safe=False)
+
+
+@csrf_exempt
+def log(request):
+    payload = json.loads(request.body)
+    logger_name = payload.get('logger_name')
+    level = payload.get('level')
+    message = payload.get('message')
+    logger = PrintLogger(logger_name)
+    if level == 'info':
+        logger.info(message)
+    elif level == 'debug':
+        logger.debug(message)
+    elif level == 'warn':
+        logger.warn(message)
+    elif level == 'error':
+        logger.error(message)
+    return json.dumps(dict(success=True))
