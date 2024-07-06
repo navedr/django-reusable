@@ -1,0 +1,13 @@
+# Sample run command
+# docker compose run --rm wkhtmltopdf --viewport-size 1280x1024 --page-size A4 http://example.com /Users/narangwa/www/test.pdf
+
+services:
+  wkhtmltopdf:
+    platform: linux/amd64
+    build: .
+    container_name: "wkhtmltopdf"
+    restart: unless-stopped
+    volumes:
+      - /Users/narangwa/www:/Users/narangwa/www
+    environment:
+        - DOCKER_DEFAULT_PLATFORM=linux/amd64
