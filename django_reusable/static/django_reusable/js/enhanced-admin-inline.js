@@ -6,20 +6,25 @@ const EnhancedAdminInline = {
     initInlineSelect2: function () {
         if (Suit.$.fn.select2) {
             $.each($(".dr-inline-select2"), $.proxy(this.convertInlineSelectToSelect2, this));
-            $(document).bind("DOMNodeInserted", $.proxy(this.onDomNodeInserted, this));
+            const observer = new MutationObserver(mutations => {
+                mutations.forEach(mutation => mutation.addedNodes.forEach(
+                    node => this.onDomNodeInserted(Suit.$(node))));
+            });
+
+            observer.observe(document, {
+                childList: true,
+                subtree: true
+            });
         }
     },
-    onDomNodeInserted: function (event) {
-        const $newForm = Suit.$(event.target);
-
-        // form-row for tabular inline and inline-related for stacked inline
+    onDomNodeInserted: function ($newForm) {
         if (!$newForm.hasClass("form-row") && !$newForm.hasClass("inline-related")) {
             return;
         }
 
         this.select2Inlines
-            .filter(({ newFormClass }) => $newForm.hasClass(newFormClass))
-            .forEach(({ parentClass, options }) =>
+            .filter(({newFormClass}) => $newForm.hasClass(newFormClass))
+            .forEach(({parentClass, options}) =>
                 $newForm.find(`.${parentClass} select:visible:not(.select2-offscreen)`).select2({
                     width: "resolve",
                     ajax: {
@@ -30,7 +35,7 @@ const EnhancedAdminInline = {
                                     item.text.toLowerCase().match(params.data.q.toLowerCase()),
                                 );
                             }
-                            success({ results });
+                            success({results});
                         },
                     },
                 }),
@@ -55,9 +60,9 @@ const EnhancedAdminInline = {
                 }))
                 .toArray();
             $select.empty();
-            this.select2Inlines.push({ newFormClass, parentClass, options });
+            this.select2Inlines.push({newFormClass, parentClass, options});
         } else {
-            $select.select2({ width: "resolve" });
+            $select.select2({width: "resolve"});
         }
     },
 };
