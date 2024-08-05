@@ -322,7 +322,14 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
         return kwargs
 
     def _get_edit_link_column(self):
-        return LinkColumn(viewname=self.get_edit_url_name(),
+        crud_instance = self
+        class EditColumn(LinkColumn):
+            def text_value(self, record, value):
+                if not crud_instance.allow_edit_for_record(record):
+                    return mark_safe('<i class="fa fa-eye"></i>')
+                return mark_safe('<i class="fa fa-edit"></i>')
+
+        return EditColumn(viewname=self.get_edit_url_name(),
                           text=mark_safe('<i class="fa fa-edit"></i>'),
                           args=[A('pk')],
                           verbose_name='',

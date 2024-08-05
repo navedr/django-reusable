@@ -17,12 +17,17 @@ class ManagerPersonView(CRUDViews):
     table_fields = ['first_name', 'last_name', 'position']
     edit_fields = ['first_name', 'last_name']
     object_title = 'Person'
-    allow_edit = False
 
     filters = ['position', ('gender', dict(label='Gender', get_choices=lambda: [('Male', 'Male'), ('Female', 'Female')],
                                            filter=filter_gender))]
     show_filter_label = True
     search_fields = ['first_name', 'last_name']
+
+    def allow_delete_for_record(self, record):
+        return record.first_name != 'Naved'
+
+    def allow_edit_for_record(self, record):
+        return record.first_name != 'Naved'
 
 
 class MusicianCRUDView(CRUDViews):

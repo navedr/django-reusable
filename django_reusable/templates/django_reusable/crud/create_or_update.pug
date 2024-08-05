@@ -9,7 +9,10 @@ block content
         .card-header
             h3.text-center
                 if object.pk
-                    | Update {{ object_title }}
+                    if disable_submit
+                        | View {{ object_title }}
+                    else
+                        | Update {{ object_title }}
                 else
                     | New {{ object_title }}
         .card-body
