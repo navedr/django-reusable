@@ -554,3 +554,7 @@ def get_offset_range(minus=0, plus=0):
 
 def spaces(num):
     return ' ' * num
+
+
+def none_safe_get(obj, attr, default=None):
+    return getattr(obj, attr, default) if obj is not None else default
