@@ -1,6 +1,7 @@
 import traceback
 
 from django.apps import AppConfig
+from django.conf import settings
 
 from django_reusable.config.config_ready_utils import generate_dajaxice_types, generate_app_path_enums, \
     convert_py_to_ts_interfaces
@@ -17,6 +18,8 @@ class DjangoReusableConfig(AppConfig):
     logger = PrintLogger("DjangoReusableConfig")
 
     def ready(self):
+        if not getattr(settings, 'REUSABLE_TS_UTIL_ENABLED', True):
+            return
         methods = [
             generate_dajaxice_types,
             generate_app_path_enums,
