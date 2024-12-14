@@ -14,7 +14,7 @@ this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
 setuptools.setup(
-    name='django-reusable',
+    name='django_reusable',
     version=str(version),
     author='Naved Rangwala',
     author_email='naved@ecarone.com',
