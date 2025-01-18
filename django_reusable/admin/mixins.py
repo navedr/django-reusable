@@ -148,7 +148,8 @@ class ExtraChangelistLinksMixin:
 class ExtraChangeFormButtonsMixin:
     """
         List of tuples:
-        ('name', dict(btn_text, btn_class, stay_on_page, callback, user_passes_test, pk_passes_test))
+        ('name', dict(btn_text: str, btn_class: str, stay_on_page: bool, custom_redirect: bool,
+         callback: fn(admin, request, pk), user_passes_test: fn(user), pk_passes_test: fn(pk)))
     """
     extra_change_form_buttons = []
 
@@ -179,10 +180,14 @@ class ExtraChangeFormButtonsMixin:
             if f'__{name}' not in request.POST:
                 continue
             callback = config.get('callback')
+            custom_redirect = config.get('custom_redirect', False)
             if callback:
                 r = callback(self, request, object_id)
                 if r:
-                    messages.info(request, r)
+                    if custom_redirect:
+                        return r
+                    else:
+                        messages.info(request, r)
             if config.get('stay_on_page', False):
                 return HttpResponseRedirect(
                     ModelURLs(self.model, self.admin_site.name, object_id).get_obj_change_url()
