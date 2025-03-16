@@ -20,6 +20,36 @@ from django_reusable.utils.user_utils import current_user_has_perms
 
 
 class CRUDViews(UserPassesTestMixin, SingleTableView):
+    """
+    A class-based view for handling CRUD operations with Django tables and forms.
+
+    Attributes:
+        template_name (str): The template to use for the CRUD view.
+        model (Model): The Django model associated with the view.
+        title (str): The title of the view.
+        table_exclude (list): Fields to exclude from the table.
+        table_fields (list): Fields to include in the table.
+        extra_table_columns (list): Additional columns to include in the table.
+        allow_table_ordering (bool): Whether to allow table ordering.
+        name (str): The name of the CRUD view.
+        edit_fields (list): Fields to include in the edit form.
+        add_fields (list): Fields to include in the add form.
+        allow_edit (bool): Whether to allow editing.
+        allow_delete (bool): Whether to allow deletion.
+        allow_add (bool): Whether to allow adding.
+        edit_form_class (Form): The form class to use for editing.
+        object_title (str): The title of the object.
+        perms (list): Permissions required to access the view.
+        base_template (str): The base template to use.
+        raise_exception (bool): Whether to raise an exception on permission failure.
+        additional_index_links (list): Additional links to include on the index page.
+        add_wizard_view_class (View): The view class to use for the add wizard.
+        filters (list): Filters to apply to the table.
+        filters_widget (Widget): The widget to use for filters.
+        show_filter_label (bool): Whether to show filter labels.
+        search_fields (list): Fields to include in the search.
+    """
+
     template_name = 'django_reusable/crud/index.pug'
     model = None
     title = None
@@ -47,26 +77,65 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
 
     @classmethod
     def get_edit_url_name(cls):
+        """
+        Returns the URL name for the edit view.
+
+        Returns:
+            str: The URL name for the edit view.
+        """
         return f'{cls.name}_-_edit'
 
     @classmethod
     def get_delete_url_name(cls):
+        """
+        Returns the URL name for the delete view.
+
+        Returns:
+            str: The URL name for the delete view.
+        """
         return f'{cls.name}_-_delete'
 
     @classmethod
     def get_add_url_name(cls):
+        """
+        Returns the URL name for the add view.
+
+        Returns:
+            str: The URL name for the add view.
+        """
         return f'{cls.name}_-_add'
 
     @classmethod
     def get_list_url_name(cls):
+        """
+        Returns the URL name for the list view.
+
+        Returns:
+            str: The URL name for the list view.
+        """
         return f'{cls.name}'
 
     @classmethod
     def has_perms(cls):
+        """
+        Checks if the current user has the required permissions.
+
+        Returns:
+            bool: True if the user has the required permissions, False otherwise.
+        """
         return current_user_has_perms(cls.perms) if cls.perms else True
 
     @classmethod
     def as_view(cls, **initkwargs):
+        """
+        Returns the view function for the CRUD view.
+
+        Args:
+            **initkwargs: Additional keyword arguments.
+
+        Returns:
+            function: The view function.
+        """
         view = super().as_view(**initkwargs)
         list_view_instance = cls(**initkwargs)
 
@@ -75,10 +144,25 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
             raise_exception = True
 
             def test_func(self):
+                """
+                Checks if the user has the required permissions.
+
+                Returns:
+                    bool: True if the user has the required permissions, False otherwise.
+                """
                 list_view_instance.request = self.request
                 return cls.has_perms()
 
             def get_context_data(self, **kwargs):
+                """
+                Returns the context data for the view.
+
+                Args:
+                    **kwargs: Additional keyword arguments.
+
+                Returns:
+                    dict: The context data.
+                """
                 context_data = super().get_context_data(**kwargs) or {}
                 context_data.update(
                     title=cls.title,
@@ -92,11 +176,26 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
             template_name = 'django_reusable/crud/create_or_update.pug'
 
             def get_form_class(self):
+                """
+                Returns the form class for the edit view.
+
+                Returns:
+                    Form: The form class.
+                """
                 if cls.edit_form_class:
                     return cls.edit_form_class
                 return super().get_form_class()
 
             def get_context_data(self, **kwargs):
+                """
+                Returns the context data for the edit view.
+
+                Args:
+                    **kwargs: Additional keyword arguments.
+
+                Returns:
+                    dict: The context data.
+                """
                 context_data = super().get_context_data(**kwargs) or {}
                 context_data.update(
                     additional_tables=list_view_instance.get_edit_view_tables(self.object)
@@ -107,28 +206,67 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
             fields = cls.add_fields or cls.edit_fields
 
             def form_valid(self, form):
+                """
+                Handles a valid form submission.
+
+                Args:
+                    form (Form): The submitted form.
+
+                Returns:
+                    HttpResponse: The response.
+                """
                 response = super().form_valid(form)
                 messages.info(self.request, f"New {cls.object_title} '{self.object}' created successfully!")
                 return response
 
             def get_success_url(self):
+                """
+                Returns the success URL for the create view.
+
+                Returns:
+                    str: The success URL.
+                """
                 return list_view_instance.get_success_url("create", self.object.pk)
 
         class CRUDUpdateView(EditViewCommon, UpdateView):
             fields = cls.edit_fields
 
             def form_valid(self, form):
+                """
+                Handles a valid form submission.
+
+                Args:
+                    form (Form): The submitted form.
+
+                Returns:
+                    HttpResponse: The response.
+                """
                 response = super().form_valid(form)
                 messages.info(self.request, f"{cls.object_title} '{self.object}' has been updated!")
                 return response
 
             def test_func(self):
+                """
+                Checks if the user has the required permissions and if the object exists.
+
+                Returns:
+                    bool: True if the user has the required permissions and the object exists, False otherwise.
+                """
                 has_perm = super().test_func()
                 if has_perm:
                     return list_view_instance.get_queryset().filter(id=self.kwargs['pk']).exists()
                 return has_perm
 
             def get_context_data(self, **kwargs):
+                """
+                Returns the context data for the update view.
+
+                Args:
+                    **kwargs: Additional keyword arguments.
+
+                Returns:
+                    dict: The context data.
+                """
                 context_data = super().get_context_data(**kwargs) or {}
                 record = list_view_instance.get_queryset().filter(id=self.kwargs['pk']).first()
                 context_data.update(
@@ -137,6 +275,17 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                 return context_data
 
             def post(self, request, *args, **kwargs):
+                """
+                Handles a POST request.
+
+                Args:
+                    request (HttpRequest): The request object.
+                    *args: Additional positional arguments.
+                    **kwargs: Additional keyword arguments.
+
+                Returns:
+                    HttpResponse: The response.
+                """
                 obj = self.get_object()
                 can_edit = list_view_instance.allow_edit_for_record(obj)
                 if not can_edit:
@@ -145,12 +294,24 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                 return super().post(request, *args, **kwargs)
 
             def get_success_url(self):
+                """
+                Returns the success URL for the update view.
+
+                Returns:
+                    str: The success URL.
+                """
                 return list_view_instance.get_success_url("update", self.object.pk)
 
         class CRUDDeleteView(ViewCommon, DeleteView):
             template_name = 'django_reusable/crud/delete.pug'
 
             def test_func(self):
+                """
+                Checks if the user has the required permissions and if the object can be deleted.
+
+                Returns:
+                    bool: True if the user has the required permissions and the object can be deleted, False otherwise.
+                """
                 has_perm = super().test_func()
                 if has_perm:
                     record = list_view_instance.get_queryset().filter(id=self.kwargs['pk']).first()
@@ -158,11 +319,28 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                 return has_perm
 
             def delete(self, request, *args, **kwargs):
+                """
+                Handles a DELETE request.
+
+                Args:
+                    request (HttpRequest): The request object.
+                    *args: Additional positional arguments.
+                    **kwargs: Additional keyword arguments.
+
+                Returns:
+                    HttpResponse: The response.
+                """
                 response = super().delete(request, *args, **kwargs)
                 messages.info(self.request, f"{cls.object_title} '{self.object}' has been deleted!")
                 return response
 
             def get_success_url(self):
+                """
+                Returns the success URL for the delete view.
+
+                Returns:
+                    str: The success URL.
+                """
                 return list_view_instance.get_success_url("delete", self.object.pk)
 
         if cls.name == 'crud-view' or not cls.name:
@@ -187,6 +365,12 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
 
     @classmethod
     def _get_add_wizard_urls(cls):
+        """
+        Returns the URL patterns for the add wizard view.
+
+        Returns:
+            list: The URL patterns.
+        """
         add_url_name = cls.get_add_url_name()
         step_url_name = f'{add_url_name}_step'
 
@@ -199,6 +383,12 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
             form_list = cls.add_wizard_view_class.form_list + [('review', ReviewForm)]
 
             def _add_review_data(self, context_data):
+                """
+                Adds review data to the context.
+
+                Args:
+                    context_data (dict): The context data.
+                """
                 all_data = self.get_all_cleaned_data()
                 all_field_labels = {}
                 for form_key in self.get_form_list():
@@ -218,6 +408,16 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                     (all_field_labels.get(k, k), v) for (k, v) in all_data.items())
 
             def get_context_data(self, form, **kwargs):
+                """
+                Returns the context data for the add wizard view.
+
+                Args:
+                    form (Form): The current form.
+                    **kwargs: Additional keyword arguments.
+
+                Returns:
+                    dict: The context data.
+                """
                 context_data = super().get_context_data(form, **kwargs)
                 if self.steps.current == 'review':
                     self._add_review_data(context_data)
@@ -233,6 +433,16 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
 
             @transaction.atomic
             def done(self, form_list, **kwargs):
+                """
+                Handles the completion of the add wizard.
+
+                Args:
+                    form_list (list): The list of forms.
+                    **kwargs: Additional keyword arguments.
+
+                Returns:
+                    HttpResponse: The response.
+                """
                 super().done(form_list, **kwargs)
                 messages.info(self.request, f'New {cls.object_title} created successfully!')
                 return HttpResponseRedirect(reverse_lazy(cls.get_list_url_name()))
@@ -245,9 +455,21 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
         ]
 
     def test_func(self):
+        """
+        Checks if the user has the required permissions.
+
+        Returns:
+            bool: True if the user has the required permissions, False otherwise.
+        """
         return self.has_perms()
 
     def _get_filters_form(self):
+        """
+        Returns the form for filtering the table.
+
+        Returns:
+            Form: The filter form.
+        """
         list_view = self
 
         class FilterForm(forms.Form):
@@ -255,6 +477,16 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                                 widget=forms.TextInput(attrs={'placeholder': 'Search', 'class': 'form-control'}))
 
             def _get_filter_choices_for_model_field(self, field, model_field):
+                """
+                Returns the filter choices for a model field.
+
+                Args:
+                    field (str): The field name.
+                    model_field (Field): The model field.
+
+                Returns:
+                    list: The filter choices.
+                """
                 if isinstance(model_field, (models.ForeignKey, models.ManyToManyField)):
                     return [(x.pk, str(x)) for x in model_field.related_model.objects.all()]
                 elif getattr(model_field, 'choices', []):
@@ -264,6 +496,13 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                     return [(x, x) for x in distinct_values]
 
             def __init__(self, *args, **kwargs):
+                """
+                Initializes the filter form.
+
+                Args:
+                    *args: Additional positional arguments.
+                    **kwargs: Additional keyword arguments.
+                """
                 super().__init__(*args, **kwargs)
                 common_attrs = dict(required=False, widget=list_view.filters_widget)
                 if not list_view.show_filter_label:
@@ -291,6 +530,15 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
         return FilterForm(self.request.GET)
 
     def get_context_data(self, **kwargs):
+        """
+        Returns the context data for the view.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            dict: The context data.
+        """
         context_data = super().get_context_data(**kwargs) or {}
         filters_form = self._get_filters_form()
         show_clear_filter = filters_form.is_valid() and any([x for x in filters_form.cleaned_data.values() if x])
@@ -308,6 +556,12 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
         return context_data
 
     def get_table_kwargs(self):
+        """
+        Returns the keyword arguments for the table.
+
+        Returns:
+            dict: The table keyword arguments.
+        """
         kwargs = super().get_table_kwargs() or {}
         extra_columns = self.get_extra_table_columns()
         extra_columns.append(('edit', self._get_edit_link_column()))
@@ -322,9 +576,26 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
         return kwargs
 
     def _get_edit_link_column(self):
+        """
+        Returns a LinkColumn for the edit action.
+
+        Returns:
+            LinkColumn: A column with edit links.
+        """
         crud_instance = self
+
         class EditColumn(LinkColumn):
             def text_value(self, record, value):
+                """
+                Returns the HTML for the edit link.
+
+                Args:
+                    record (Model): The record being displayed.
+                    value (str): The current value.
+
+                Returns:
+                    str: The HTML for the edit link.
+                """
                 if not crud_instance.allow_edit_for_record(record):
                     return mark_safe('<i class="fa fa-eye"></i>')
                 return mark_safe('<i class="fa fa-edit"></i>')
@@ -336,10 +607,27 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                           attrs={'a': {'class': 'btn btn-sm btn-primary'}})
 
     def _get_delete_link_column(self):
+        """
+        Returns a LinkColumn for the delete action.
+
+        Returns:
+            LinkColumn: A column with delete links.
+        """
         crud = self
 
         class DeleteLinkColumn(LinkColumn):
             def render(self, value, record, bound_column):
+                """
+                Renders the HTML for the delete link.
+
+                Args:
+                    value (str): The current value.
+                    record (Model): The record being displayed.
+                    bound_column (BoundColumn): The bound column.
+
+                Returns:
+                    str: The HTML for the delete link.
+                """
                 if crud.allow_delete_for_record(record):
                     return super().render(value, record, bound_column)
                 return ''
@@ -351,30 +639,91 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
                                 attrs={'a': {'class': 'btn btn-sm btn-danger'}})
 
     def get_allow_edit(self):
+        """
+        Checks if editing is allowed.
+
+        Returns:
+            bool: True if editing is allowed, False otherwise.
+        """
         return self.allow_edit
 
     def get_allow_delete(self):
+        """
+        Checks if deletion is allowed.
+
+        Returns:
+            bool: True if deletion is allowed, False otherwise.
+        """
         return self.allow_delete
 
     def allow_delete_for_record(self, record):
+        """
+        Checks if a specific record can be deleted.
+
+        Args:
+            record (Model): The record to check.
+
+        Returns:
+            bool: True if the record can be deleted, False otherwise.
+        """
         return self.get_allow_delete()
 
     def allow_edit_for_record(self, record):
+        """
+        Checks if a specific record can be edited.
+
+        Args:
+            record (Model): The record to check.
+
+        Returns:
+            bool: True if the record can be edited, False otherwise.
+        """
         return self.get_allow_edit()
 
     def get_allow_add(self):
+        """
+        Checks if adding new records is allowed.
+
+        Returns:
+            bool: True if adding is allowed, False otherwise.
+        """
         return self.allow_add
 
     def get_table_exclude(self):
+        """
+        Returns the list of fields to exclude from the table.
+
+        Returns:
+            list: The list of fields to exclude.
+        """
         return self.table_exclude
 
     def get_extra_table_columns(self):
+        """
+        Returns the list of extra columns to include in the table.
+
+        Returns:
+            list: The list of extra columns.
+        """
         return self.extra_table_columns
 
     def get_table_fields(self):
+        """
+        Returns the list of fields to include in the table.
+
+        Returns:
+            list: The list of fields.
+        """
         return self.table_fields
 
     def get_table_class(self):
+        """
+        Returns the table class to use for the CRUD view.
+
+        Returns:
+            type: The table class.
+        """
+
         class CRUDViewTable(EnhancedTable):
             class Meta:
                 model = self.model
@@ -383,12 +732,36 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
         return CRUDViewTable
 
     def get_edit_view_tables(self, record):
+        """
+        Returns additional tables to display in the edit view.
+
+        Args:
+            record (Model): The record being edited.
+
+        Returns:
+            list: The list of additional tables.
+        """
         return []
 
     def get_additional_index_links(self):
+        """
+        Returns additional links to include on the index page.
+
+        Returns:
+            list: The list of additional links.
+        """
         return self.additional_index_links
 
     def _apply_filters(self, qs):
+        """
+        Applies filters to the queryset.
+
+        Args:
+            qs (QuerySet): The initial queryset.
+
+        Returns:
+            QuerySet: The filtered queryset.
+        """
         filters = self.get_filters()
         search_fields = self.get_search_fields()
         if filters:
@@ -406,15 +779,43 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
         return qs
 
     def get_table_data(self):
+        """
+        Returns the table data after applying filters.
+
+        Returns:
+            QuerySet: The filtered table data.
+        """
         qs = super().get_table_data()
         qs = self._apply_filters(qs)
         return qs
 
     def get_filters(self):
+        """
+        Returns the list of filters to apply to the table.
+
+        Returns:
+            list: The list of filters.
+        """
         return self.filters
 
     def get_search_fields(self):
+        """
+        Returns the list of fields to include in the search.
+
+        Returns:
+            list: The list of search fields.
+        """
         return self.search_fields
 
     def get_success_url(self, type, pk):
+        """
+        Returns the success URL for the CRUD operations.
+
+        Args:
+            type (str): The type of operation (create, update, delete).
+            pk (int): The primary key of the record.
+
+        Returns:
+            str: The success URL.
+        """
         return reverse_lazy(self.get_list_url_name())

@@ -10,6 +10,17 @@ from ..logging.loggers import PrintLogger
 
 @csrf_exempt
 def ajax_callback_handler(request, name, pk):
+    """
+    Handles AJAX callback requests.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        name (str): The name of the callback.
+        pk (int): The primary key of the object.
+
+    Returns:
+        HttpResponse: The HTTP response with the callback result or an error message.
+    """
     callback_params = getattr(admin.site, 'ajax_handler_callback_params', {}).get(name)
     if callback_params:
         self, callback = callback_params
@@ -24,11 +35,29 @@ def ajax_callback_handler(request, name, pk):
 
 @csrf_exempt
 def is_user_authenticated(request):
+    """
+    Checks if the user is authenticated.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        JsonResponse: A JSON response with the authentication status.
+    """
     return JsonResponse(request.user.is_authenticated, safe=False)
 
 
 @csrf_exempt
 def admin_utils_callback(request):
+    """
+    Handles admin utility callback requests.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        JsonResponse: A JSON response with the utility callback result.
+    """
     payload = json.loads(request.body)
     app = payload.get('app')
     model = payload.get('model')
@@ -46,6 +75,15 @@ def admin_utils_callback(request):
 
 @csrf_exempt
 def log(request):
+    """
+    Logs a message using the specified logger.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        str: A JSON string indicating the success of the logging operation.
+    """
     payload = json.loads(request.body)
     logger_name = payload.get('logger_name')
     level = payload.get('level')

@@ -1,4 +1,14 @@
 def remove_from_fieldsets(fieldsets, fields):
+    """
+    Removes specified fields from the given fieldsets.
+
+    Args:
+        fieldsets (list): A list of fieldsets, where each fieldset is a tuple containing a title and a dictionary of options.
+        fields (list): A list of field names to be removed from the fieldsets.
+
+    Returns:
+        None
+    """
     if not fields:
         return
     for fieldset in fieldsets:

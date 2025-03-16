@@ -3,14 +3,33 @@ from django_tables2.rows import BoundRow, BoundRows
 
 
 class EnhancedBoundRow(BoundRow):
+    """
+    A custom BoundRow class that supports new rows in the table.
+    """
 
     def new_rows(self):
+        """
+        Generates new rows based on the new_row_columns attribute of the table.
+
+        Yields:
+            tuple: A tuple containing the column and its current value for each new row.
+        """
         new_row_columns = self.table.new_row_columns
         rows = sorted(set(new_row_index for column, new_row_index in new_row_columns))
         for row in rows:
             yield self.get_new_row_items(row, new_row_columns)
 
     def get_new_row_items(self, row, new_row_columns):
+        """
+        Gets the items for a new row.
+
+        Args:
+            row (int): The index of the new row.
+            new_row_columns (list): A list of tuples containing the column and its new row index.
+
+        Yields:
+            tuple: A tuple containing the column and its current value.
+        """
         for column, new_row_index in new_row_columns:
             if row == new_row_index:
                 column.current_value = self.get_cell(column.name)
@@ -21,7 +40,17 @@ class EnhancedBoundRow(BoundRow):
 
 
 class EnhancedBoundRows(BoundRows):
+    """
+    A custom BoundRows class that supports pinned rows and uses EnhancedBoundRow.
+    """
+
     def __iter__(self):
+        """
+        Iterates over the rows, including pinned rows at the top and bottom.
+
+        Yields:
+            EnhancedBoundRow: The next row in the table.
+        """
         # Top pinned rows
         for pinned_record in self.generator_pinned_row(self.pinned_data.get('top')):
             yield pinned_record
@@ -35,8 +64,13 @@ class EnhancedBoundRows(BoundRows):
 
     def __getitem__(self, key):
         """
-        Slicing returns a new `~.BoundRows` instance, indexing returns a single
-        `~.BoundRow` instance.
+        Gets a specific row or a slice of rows.
+
+        Args:
+            key (int or slice): The index or slice of the rows to get.
+
+        Returns:
+            EnhancedBoundRow or EnhancedBoundRows: The requested row(s).
         """
         if isinstance(key, slice):
             return self.__class__(
@@ -49,8 +83,20 @@ class EnhancedBoundRows(BoundRows):
 
 
 class EnhancedTable(Table):
+    """
+    A custom Table class that supports extra data, new row columns, and extra footers.
+    """
 
     def __init__(self, *args, extra_data={}, fields=None, **kwargs):
+        """
+        Initializes the EnhancedTable.
+
+        Args:
+            *args: Variable length argument list.
+            extra_data (dict, optional): Additional data for the table. Defaults to {}.
+            fields (list, optional): The fields to include in the table. Defaults to None.
+            **kwargs: Arbitrary keyword arguments.
+        """
         kwargs['template_name'] = 'django_reusable/tables/enhanced-table.html'
         self.extra_data = extra_data
         super().__init__(*args, **kwargs)
@@ -64,11 +110,20 @@ class EnhancedTable(Table):
 
     @property
     def new_row_columns(self):
+        """
+        Gets the columns that have new row indices.
+
+        Returns:
+            list: A list of tuples containing the column and its new row index.
+        """
         return [(column, column.column.new_row_index) for column in self.columns.all()
                 if getattr(column.column, 'has_new_row_index', False)]
 
     def get_extra_footers(self):
         """
-        :return: List of dict with column as key for each footer row
+        Gets the extra footers for the table.
+
+        Returns:
+            list: A list of dictionaries with the column as the key for each footer row.
         """
         return []

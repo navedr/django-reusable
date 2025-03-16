@@ -7,30 +7,65 @@ from django.core.exceptions import PermissionDenied
 from functools import wraps
 from urllib.parse import urlparse
 
+
 def get_user_permissions(user):
+    """
+    Retrieves all permissions for the given user.
+
+    Args:
+        user (User): The user object.
+
+    Returns:
+        QuerySet: A queryset of all permissions for the user.
+    """
     return user.user_permissions.all() | Permission.objects.filter(group__user=user)
 
 
 def get_permissions_strings(user):
+    """
+    Retrieves all permissions for the given user as strings.
+
+    Args:
+        user (User): The user object.
+
+    Returns:
+        list: A list of permission strings in the format 'app_label.codename'.
+    """
     return list({"%s.%s" % (ct, name) for ct, name in
                  get_user_permissions(user).values_list('content_type__app_label', 'codename')})
 
 
 def get_current_user_permissions():
+    """
+    Retrieves all permissions for the current user.
+
+    Returns:
+        QuerySet: A queryset of all permissions for the current user.
+    """
     return get_user_permissions(current_user())
 
 
 def get_current_user_permissions_strings():
+    """
+    Retrieves all permissions for the current user as strings.
+
+    Returns:
+        list: A list of permission strings in the format 'app_label.codename'.
+    """
     return get_permissions_strings(current_user())
 
 
 def user_has_perms(user, perms, exclude_superuser=False):
     """
-    Checks if the user has at least one perm in the list of perms
-    :param user:
-    :param perms: Perms to check
-    :param exclude_superuser: By default, superuser has all perms. If this is True, then it checks permissions list.
-    :return: True if user has at least one perm
+    Checks if the user has at least one permission in the list of permissions.
+
+    Args:
+        user (User): The user object.
+        perms (list): A list of permissions to check.
+        exclude_superuser (bool, optional): If True, superuser permissions are excluded. Defaults to False.
+
+    Returns:
+        bool: True if the user has at least one permission, False otherwise.
     """
     if not exclude_superuser and user.is_superuser:
         return True
@@ -43,10 +78,30 @@ def user_has_perms(user, perms, exclude_superuser=False):
 
 
 def current_user_has_perms(perms, exclude_superuser=False):
+    """
+    Checks if the current user has at least one permission in the list of permissions.
+
+    Args:
+        perms (list): A list of permissions to check.
+        exclude_superuser (bool, optional): If True, superuser permissions are excluded. Defaults to False.
+
+    Returns:
+        bool: True if the current user has at least one permission, False otherwise.
+    """
     return user_has_perms(current_user(), perms, exclude_superuser)
 
 
 def get_users_for_perms(perms, user_filter=None):
+    """
+    Retrieves all users who have at least one of the specified permissions.
+
+    Args:
+        perms (list): A list of permissions to check.
+        user_filter (dict, optional): Additional filters to apply to the user query. Defaults to None.
+
+    Returns:
+        list: A list of users who have at least one of the specified permissions.
+    """
     users = set()
     user_filter = user_filter or {}
     for perm in perms:
@@ -60,14 +115,31 @@ def get_users_for_perms(perms, user_filter=None):
 
 
 def is_superuser(user):
+    """
+    Checks if the user is an active superuser.
+
+    Args:
+        user (User): The user object.
+
+    Returns:
+        bool: True if the user is an active superuser, False otherwise.
+    """
     return user.is_active and user.is_staff and user.is_superuser
 
 
 def user_passes_test(test_func, login_url=None, redirect_field_name=REDIRECT_FIELD_NAME, raise_exception=False):
     """
-    Decorator for views that checks that the user passes the given test,
-    redirecting to the log-in page if necessary. The test should be a callable
-    that takes the user object and returns True if the user passes.
+    Decorator for views that checks if the user passes the given test,
+    redirecting to the login page if necessary.
+
+    Args:
+        test_func (function): A callable that takes the user object and returns True if the user passes.
+        login_url (str, optional): The URL to redirect to for login. Defaults to settings.LOGIN_URL.
+        redirect_field_name (str, optional): The name of the redirect field. Defaults to REDIRECT_FIELD_NAME.
+        raise_exception (bool, optional): If True, raises PermissionDenied exception instead of redirecting. Defaults to False.
+
+    Returns:
+        function: The decorated view function.
     """
 
     def decorator(view_func):

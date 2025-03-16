@@ -2,18 +2,31 @@ import csv
 from django.http import HttpResponse
 from collections import OrderedDict
 
-
 def export_as_csv_action(description="Export selected as CSV file",
                          fields=None, exclude=None, header=True):
     """
-    This function returns an export csv action
-    'fields' and 'exclude' work like in django ModelForm
-    'header' is whether or not to output the column names as the first row
+    Returns an export CSV action for Django admin.
+
+    Args:
+        description (str): Description of the action.
+        fields (list, optional): List of fields to include in the CSV. Defaults to None.
+        exclude (list, optional): List of fields to exclude from the CSV. Defaults to None.
+        header (bool, optional): Whether to include column names as the first row. Defaults to True.
+
+    Returns:
+        function: A function that exports the selected queryset as a CSV file.
     """
     def export_as_csv(modeladmin, request, queryset):
         """
-        Generic csv export admin action.
-        based on http://djangosnippets.org/snippets/1697/
+        Generic CSV export admin action.
+
+        Args:
+            modeladmin (ModelAdmin): The current ModelAdmin instance.
+            request (HttpRequest): The current request object.
+            queryset (QuerySet): The queryset of selected objects.
+
+        Returns:
+            HttpResponse: A response with the CSV file.
         """
         opts = modeladmin.model._meta
         field_names = set([field.name for field in opts.fields])

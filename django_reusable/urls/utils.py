@@ -4,6 +4,12 @@ from django_reusable.constants import URLNames
 
 
 def get_all_urls():
+    """
+    Retrieves all URL patterns and their corresponding paths.
+
+    Returns:
+        dict: A dictionary where the keys are URL names and the values are their paths.
+    """
     result = dict()
     for (key, value) in get_resolver().reverse_dict.items():
         try:
@@ -20,6 +26,15 @@ def get_all_urls():
 
 
 def get_app_and_url_name(request):
+    """
+    Retrieves the app name and URL name from the request.
+
+    Args:
+        request (HttpRequest): The current request object.
+
+    Returns:
+        tuple: A tuple containing the app name and URL name.
+    """
     try:
         resolved = resolve(request.path_info)
         return resolved.app_name, resolved.url_name
