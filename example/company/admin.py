@@ -54,7 +54,8 @@ class PersonAdmin(EnhancedAdminMixin):
         ('field_name', dict(btn_text, btn_class, additional_html, callback, short_desc))
     """
     ajax_action_fields = [
-        ('test_ajax', dict(btn_text='Test Ajax', additional_html='<b>hi</b>', callback=lambda *args: f"hola {args}!"))
+        ('test_ajax', dict(btn_text='Test Ajax', additional_html='<b>hi</b>', callback=lambda *args: f"hola {args}!",
+                           confirm='are you sure?')),
     ]
     """
         List of tuples:

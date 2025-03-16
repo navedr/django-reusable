@@ -29,15 +29,23 @@ const EnhancedAdminMixin = {
         if (data.hide_save_buttons) {
             $(".submit-row").remove();
         } else {
-            data.extra_submit_buttons.forEach(({name, config: {btn_text, btn_class}}) => {
-                $(".submit-row").append(
-                    `<button name="__${name}" type="submit" class="btn ${btn_class}">${btn_text}</button>`,
-                );
+            data.extra_submit_buttons.forEach(({name, config: {btn_text, btn_class, confirm}}) => {
+                const $button = $(`<button name="__${name}" type="submit" class="btn ${btn_class}">${btn_text}</button>`);
+                if (confirm) {
+                    $button.attr("onclick", `return confirm('${confirm}');`);
+                }
+                $(".submit-row").append($button);
             });
         }
     },
     handleAjaxFields: function () {
         $(".dr-ajax-action-btn").click(function (e) {
+            const confirm_text = $(e.currentTarget).data("confirm");
+            if (confirm_text) {
+                if (!confirm(confirm_text)) {
+                    return false;
+                }
+            }
             fetch($(e.currentTarget).data("url"))
                 .then(response => response.text())
                 .then(response => alert(response))

@@ -67,7 +67,8 @@ class EnhancedBaseAdminMixin(BaseModelAdmin):
 class AjaxActionMixin:
     """
         List of tuples:
-        ('field_name', dict(btn_text, btn_class, additional_html, callback, short_desc))
+        ('field_name', dict(btn_text: str, btn_class: str, additional_html: str, callback: fn(admin, request, pk),
+                            short_desc: str, confirm: str))
     """
     ajax_action_fields = []
 
@@ -92,11 +93,12 @@ class AjaxActionMixin:
         for name, config in self.get_ajax_action_fields():
             btn_text = config.get('btn_text', 'Button')
             btn_class = config.get('btn_class', 'btn btn-warning')
+            confirm = config.get('confirm', "")
 
             @mark_safe
             def func(instance):
                 url = reverse('admin:%s_%s-dr-ajax-action' % info, args=(name, instance.id))
-                return (f'<button class="{btn_class} dr-ajax-action-btn" data-url="{url}">'
+                return (f'<button data-confirm="{confirm}" class="{btn_class} dr-ajax-action-btn" data-url="{url}">'
                         f'{btn_text}</button>' +
                         config.get('additional_html', ''))
 
@@ -148,7 +150,7 @@ class ExtraChangelistLinksMixin:
 class ExtraChangeFormButtonsMixin:
     """
         List of tuples:
-        ('name', dict(btn_text: str, btn_class: str, stay_on_page: bool, custom_redirect: bool,
+        ('name', dict(btn_text: str, btn_class: str, stay_on_page: bool, custom_redirect: bool, confirm: str,
          callback: fn(admin, request, pk), user_passes_test: fn(user), pk_passes_test: fn(pk)))
     """
     extra_change_form_buttons = []
