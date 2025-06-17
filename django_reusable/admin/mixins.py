@@ -310,7 +310,7 @@ class EnhancedAdminMixin(admin.ModelAdmin,
         if self.default_filters:
             try:
                 test = request.META['HTTP_REFERER'].split(request.META['PATH_INFO'])
-                if test and test[-1] and not test[-1].startswith('?'):
+                if test and test[-1] and not test[-1].startswith('?') and not request.META['QUERY_STRING']:
                     url = reverse('admin:%s_%s_changelist' % (self.opts.app_label, self.opts.model_name))
                     filters = []
                     for f in self.default_filters:
