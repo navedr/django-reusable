@@ -5,6 +5,7 @@ from django.utils.safestring import mark_safe
 
 from django_reusable.admin.mixins import EnhancedAdminMixin, EnhancedAdminInlineMixin
 from django_reusable.logging.loggers import PrintLogger
+from django_reusable.models.fields import format_us_address
 from .models import Person, Album, Musician, MusicianConcert, City, Concert
 
 
@@ -31,8 +32,23 @@ class PersonAdmin(EnhancedAdminMixin):
     ]
     inlines = [MusicianInline]
 
-    list_display = fields = ['first_name', 'last_name', 'position', 'alert_name', 'say_hello', 'throw_error',
-                             'person_manager', 'person_table', 'test_ajax', 'nom']
+    # Fields for the form (actual model fields only)
+    fields = ['first_name', 'last_name', 'position', 'home_address', 'work_address']
+
+    # List display can include both model fields and admin methods
+    list_display = ['first_name', 'last_name', 'position', 'alert_name', 'say_hello', 'throw_error',
+                    'person_manager', 'person_table', 'test_ajax', 'nom', 'formatted_home_address', 'formatted_work_address']
+
+    def formatted_home_address(self, obj):
+        """Display formatted home address in admin list"""
+        return format_us_address(obj.home_address)
+    formatted_home_address.short_description = 'Home Address'
+
+    def formatted_work_address(self, obj):
+        """Display formatted work address in admin list"""
+        return format_us_address(obj.work_address)
+    formatted_work_address.short_description = 'Work Address'
+
     """
         List of tuples:
         ('name', dict(btn_text, btn_class, stay_on_page, callback, user_passes_test, pk_passes_test))

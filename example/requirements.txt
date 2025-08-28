@@ -5,3 +5,4 @@ django-tables2==1.21.2
 django-formtools==2.1
 ipython==7.34
 django-crispy-forms==1.7.2
+-e ../

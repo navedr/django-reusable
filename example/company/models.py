@@ -1,6 +1,6 @@
 from django.db import models
 
-from django_reusable.models import TimeStampedModel
+from django_reusable.models import TimeStampedModel, USAddressField
 
 
 class Person(TimeStampedModel):
@@ -9,6 +9,8 @@ class Person(TimeStampedModel):
     position = models.CharField(max_length=30, null=True, blank=True,
                                 choices=[('Software Engineer', 'IT - Software Engineer'),
                                          ('Manager', 'General - Manager')])
+    home_address = USAddressField(blank=True, null=True, help_text="Home address")
+    work_address = USAddressField(blank=True, null=True, help_text="Work address")
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
