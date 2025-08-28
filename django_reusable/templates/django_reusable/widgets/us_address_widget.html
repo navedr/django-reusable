@@ -1,0 +1,155 @@
+<style>
+    .us-address-widget {
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 4px;
+        display: inline-block;
+        min-width: 300px;
+    }
+
+    .us-address-widget .panel-header {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .us-address-widget label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .us-address-widget .block {
+        margin-top: 10px;
+    }
+</style>
+
+<div class="us-address-widget">
+    <!-- Collapsed view (readonly) -->
+    <div id="{{ widget.name }}_collapsed" class="address-collapsed">
+        <div class="panel-header">
+            <strong>{{ formatted_display }}</strong>
+            <span id="{{ widget.name }}_caret">
+                {{ caret_down_svg|safe }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Expanded view (editable fields) -->
+    <div id="{{ widget.name }}_expanded" class="address-expanded" style="display: none;">
+        <div class="panel-header">
+            <strong></strong>
+            <span id="{{ widget.name }}_caret_expanded">
+                {{ caret_up_svg|safe }}
+            </span>
+        </div>
+
+        <div>
+            <label for="{{ widget.name }}_street_address">Street Address:</label>
+            <input type="text" id="{{ widget.name }}_street_address" name="{{ widget.name }}_street_address"
+                   value="{{ value.street_address|default:'' }}"
+                   autocomplete="address-line1">
+        </div>
+
+        <div class="block">
+            <label for="{{ widget.name }}_street_address_2">Street Address 2 (Optional):</label>
+            <input type="text" id="{{ widget.name }}_street_address_2" name="{{ widget.name }}_street_address_2"
+                   value="{{ value.street_address_2|default:'' }}"
+                   autocomplete="address-line2">
+        </div>
+
+        <div class="block">
+            <label for="{{ widget.name }}_city">City:</label>
+            <input type="text" id="{{ widget.name }}_city" name="{{ widget.name }}_city"
+                   value="{{ value.city|default:'' }}"
+                   autocomplete="address-level2">
+        </div>
+
+        <div style="display: flex;" class="block">
+            <div style="padding-right: 10px;">
+                <label for="{{ widget.name }}_state">State:</label>
+                <select id="{{ widget.name }}_state" name="{{ widget.name }}_state"
+                        autocomplete="address-level1" style="width: 100px;">
+                    {% for state_code, state_name in us_states %}
+                        <option value="{{ state_code }}"
+                                {% if state_code == value.state %}selected{% endif %}>{{ state_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="{{ widget.name }}_zip_code">ZIP
+                    Code:</label>
+                <input type="text" id="{{ widget.name }}_zip_code" name="{{ widget.name }}_zip_code"
+                       value="{{ value.zip_code|default:'' }}"
+                       style="width: 100px;"
+                       autocomplete="postal-code"
+                       placeholder="12345 or 12345-6789">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        var $collapsedDiv = $('#{{ widget.name }}_collapsed');
+        var $expandedDiv = $('#{{ widget.name }}_expanded');
+
+        function toggleWidget() {
+            if ($expandedDiv.is(':hidden')) {
+                // Show expanded view
+                $collapsedDiv.hide();
+                $expandedDiv.show();
+            } else {
+                // Show collapsed view
+                updateCollapsedView();
+                $collapsedDiv.show();
+                $expandedDiv.hide();
+            }
+        }
+
+        function updateCollapsedView() {
+            // Update the readonly display with current form values
+            var streetAddress = $('#{{ widget.name }}_street_address').val();
+            var streetAddress2 = $('#{{ widget.name }}_street_address_2').val();
+            var city = $('#{{ widget.name }}_city').val();
+            var state = $('#{{ widget.name }}_state').val();
+            var zipCode = $('#{{ widget.name }}_zip_code').val();
+
+            var parts = [];
+            if (streetAddress && streetAddress.trim()) parts.push(streetAddress.trim());
+            if (streetAddress2 && streetAddress2.trim()) parts.push(streetAddress2.trim());
+
+            var cityStateZip = [];
+            if (city && city.trim()) cityStateZip.push(city.trim());
+            if (state && state.trim()) cityStateZip.push(state.trim());
+            if (zipCode && zipCode.trim()) cityStateZip.push(zipCode.trim());
+
+            if (cityStateZip.length > 0) {
+                if (cityStateZip.length === 3) {
+                    parts.push(cityStateZip[0] + ', ' + cityStateZip[1] + ' ' + cityStateZip[2]);
+                } else {
+                    parts.push(cityStateZip.join(', '));
+                }
+            }
+
+            var displayText = parts.length > 0 ? parts.join(' • ') : 'No address entered';
+            $collapsedDiv.find('strong').html(displayText);
+        }
+
+        // Add click handlers
+        $collapsedDiv.on('click', toggleWidget);
+        $expandedDiv.find(".panel-header").on('click', toggleWidget);
+
+        // Update collapsed view when form fields change
+        var inputIds = ['{{ widget.name }}_street_address', '{{ widget.name }}_street_address_2', '{{ widget.name }}_city', '{{ widget.name }}_state', '{{ widget.name }}_zip_code'];
+        $.each(inputIds, function (index, inputId) {
+            $('#' + inputId).on('change', function () {
+                if ($collapsedDiv.is(':visible')) {
+                    updateCollapsedView();
+                }
+            });
+        });
+    });
+</script>

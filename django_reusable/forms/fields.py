@@ -1,6 +1,18 @@
 from django import forms
 import json
+from ..utils.address_utils import format_us_address
 
+caret_up_svg = '''
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-up" viewBox="0 0 16 16">
+  <path d="M3.204 11h9.592L8 5.519zm-.753-.659 4.796-5.48a1 1 0 0 1 1.506 0l4.796 5.48c.566.647.106 1.659-.753 1.659H3.204a1 1 0 0 1-.753-1.659"/>
+</svg>
+'''
+
+caret_down_svg = '''
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-down-fill" viewBox="0 0 16 16">
+  <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+</svg>
+'''
 
 class ChoiceFieldNoValidation(forms.ChoiceField):
     """
@@ -70,14 +82,12 @@ class USAddressWidget(forms.Widget):
             'zip_code': data.get(f'{name}_zip_code', '')
         }
 
-    def render(self, name, value, attrs=None, renderer=None):
-        """Render the widget HTML"""
-        from html import escape
-
-        if attrs is None:
-            attrs = {}
+    def get_context(self, name, value, attrs):
+        """Get context for template rendering"""
+        context = super().get_context(name, value, attrs)
 
         formatted_value = self.format_value(value)
+        formatted_display = format_us_address(formatted_value)
 
         # US states list
         us_states = [
@@ -97,56 +107,15 @@ class USAddressWidget(forms.Widget):
             ('WI', 'Wisconsin'), ('WY', 'Wyoming')
         ]
 
-        html = f'''
-        <div class="us-address-widget" style="border: 1px solid #ddd; padding: 10px; border-radius: 4px; display: inline-block;">
-            <div>
-                <label for="{name}_street_address" style="display: block; font-weight: bold; margin-bottom: 5px;">Street Address:</label>
-                <input type="text" id="{name}_street_address" name="{name}_street_address" 
-                       value="{escape(formatted_value.get('street_address', ''))}" 
-                       autocomplete="address-line1">
-            </div>
-            
-            <div style="margin-top: 5px;">
-                <label for="{name}_street_address_2" style="display: block; font-weight: bold; margin-bottom: 5px;">Street Address 2 (Optional):</label>
-                <input type="text" id="{name}_street_address_2" name="{name}_street_address_2" 
-                       value="{escape(formatted_value.get('street_address_2', ''))}" 
-                       autocomplete="address-line2">
-            </div>
-            
-            <div style="margin-top: 5px;">
-                <label for="{name}_city" style="display: block; font-weight: bold; margin-bottom: 5px;">City:</label>
-                <input type="text" id="{name}_city" name="{name}_city" 
-                       value="{escape(formatted_value.get('city', ''))}" 
-                       autocomplete="address-level2">
-            </div>
-            <div style="display: flex; gap: 10px; margin-top: 5px;">
-                <div style="flex: 1;">
-                    <label for="{name}_state" style="display: block; font-weight: bold; margin-bottom: 5px;">State:</label>
-                    <select id="{name}_state" name="{name}_state" style="width: 100px;"
-                            autocomplete="address-level1">
-        '''
+        context.update({
+            'formatted_display': formatted_display,
+            'us_states': us_states,
+            'caret_up_svg': caret_up_svg,
+            'caret_down_svg': caret_down_svg,
+            'value': formatted_value,
+        })
 
-        # Add state options
-        for value_code, display_name in us_states:
-            selected = 'selected' if value_code == formatted_value.get('state', '') else ''
-            html += f'<option value="{value_code}" {selected}>{display_name}</option>'
-
-        html += f'''
-                    </select>
-                </div>
-                
-                <div style="flex: 1;">
-                    <label for="{name}_zip_code" style="display: block; font-weight: bold; margin-bottom: 5px;">ZIP Code:</label>
-                    <input type="text" id="{name}_zip_code" name="{name}_zip_code" style="width: 100px;" 
-                           value="{escape(formatted_value.get('zip_code', ''))}" 
-                           autocomplete="postal-code"
-                           placeholder="12345 or 12345-6789">
-                </div>
-            </div>
-        </div>
-        '''
-
-        return html
+        return context
 
 
 class USAddressFormField(forms.Field):
