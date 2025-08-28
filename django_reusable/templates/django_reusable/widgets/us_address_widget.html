@@ -3,7 +3,8 @@
         border: 1px solid #ddd;
         padding: 10px;
         border-radius: 4px;
-        display: inline-block;
+        display: inline-block!important;
+        max-width: 300px;
         min-width: 300px;
     }
 
@@ -92,39 +93,84 @@
 </div>
 
 <script>
-    $(document).ready(function () {
-        var $collapsedDiv = $('#{{ widget.name }}_collapsed');
-        var $expandedDiv = $('#{{ widget.name }}_expanded');
+    $(document).ready(function() {
+        // Make functions globally available for event handlers
+        if (!window.usAddressWidgetFunctions) {
+            window.usAddressWidgetFunctions = {
+                toggleWidget: toggleWidget,
+                updateCollapsedView: updateCollapsedView
+            };
+        }
+        // Only initialize the global event handlers once
+        if (!window.usAddressWidgetInitialized) {
+            window.usAddressWidgetInitialized = true;
 
-        function toggleWidget() {
+            // Use event delegation for dynamically added elements - click on panel headers
+            $(document).on('click', '.address-collapsed .panel-header', function() {
+                var $collapsed = $(this).closest('.address-collapsed');
+                var widgetName = $collapsed.attr('id').replace('_collapsed', '');
+                window.usAddressWidgetFunctions.toggleWidget(widgetName);
+            });
+
+            $(document).on('click', '.address-expanded .panel-header', function() {
+                var $expanded = $(this).closest('.address-expanded');
+                var widgetName = $expanded.attr('id').replace('_expanded', '');
+                window.usAddressWidgetFunctions.toggleWidget(widgetName);
+            });
+
+            // Use event delegation for form field changes
+            $(document).on('change', '[id$="_street_address"], [id$="_street_address_2"], [id$="_city"], [id$="_state"], [id$="_zip_code"]', function() {
+                var fieldId = $(this).attr('id');
+                var widgetName = fieldId.replace(/_(?:street_address|street_address_2|city|state|zip_code)$/, '');
+                var $collapsedDiv = $('#' + widgetName + '_collapsed');
+
+                if ($collapsedDiv.is(':visible')) {
+                    window.usAddressWidgetFunctions.updateCollapsedView(widgetName);
+                }
+            });
+            $(".error > .us-address-widget .address-collapsed .panel-header").click();
+        }
+
+        // Initialize this specific widget instance
+        var currentWidgetName = '{{ widget.name }}';
+        if (currentWidgetName.indexOf('__prefix__') === -1) {
+            if (window.usAddressWidgetFunctions) {
+                window.usAddressWidgetFunctions.updateCollapsedView(currentWidgetName);
+            }
+        }
+
+        function toggleWidget(widgetName) {
+            var $collapsedDiv = $('#' + widgetName + '_collapsed');
+            var $expandedDiv = $('#' + widgetName + '_expanded');
+
             if ($expandedDiv.is(':hidden')) {
                 // Show expanded view
                 $collapsedDiv.hide();
                 $expandedDiv.show();
             } else {
                 // Show collapsed view
-                updateCollapsedView();
+                updateCollapsedView(widgetName);
                 $collapsedDiv.show();
                 $expandedDiv.hide();
             }
         }
 
-        function updateCollapsedView() {
+        function updateCollapsedView(widgetName) {
             // Update the readonly display with current form values
-            var streetAddress = $('#{{ widget.name }}_street_address').val();
-            var streetAddress2 = $('#{{ widget.name }}_street_address_2').val();
-            var city = $('#{{ widget.name }}_city').val();
-            var state = $('#{{ widget.name }}_state').val();
-            var zipCode = $('#{{ widget.name }}_zip_code').val();
+            var streetAddress = $('#' + widgetName + '_street_address').val() || '';
+            var streetAddress2 = $('#' + widgetName + '_street_address_2').val() || '';
+            var city = $('#' + widgetName + '_city').val() || '';
+            var state = $('#' + widgetName + '_state').val() || '';
+            var zipCode = $('#' + widgetName + '_zip_code').val() || '';
 
             var parts = [];
-            if (streetAddress && streetAddress.trim()) parts.push(streetAddress.trim());
-            if (streetAddress2 && streetAddress2.trim()) parts.push(streetAddress2.trim());
+            if (streetAddress.trim()) parts.push(streetAddress.trim());
+            if (streetAddress2.trim()) parts.push(streetAddress2.trim());
 
             var cityStateZip = [];
-            if (city && city.trim()) cityStateZip.push(city.trim());
-            if (state && state.trim()) cityStateZip.push(state.trim());
-            if (zipCode && zipCode.trim()) cityStateZip.push(zipCode.trim());
+            if (city.trim()) cityStateZip.push(city.trim());
+            if (state.trim()) cityStateZip.push(state.trim());
+            if (zipCode.trim()) cityStateZip.push(zipCode.trim());
 
             if (cityStateZip.length > 0) {
                 if (cityStateZip.length === 3) {
@@ -135,21 +181,7 @@
             }
 
             var displayText = parts.length > 0 ? parts.join(' • ') : 'No address entered';
-            $collapsedDiv.find('strong').html(displayText);
+            $('#' + widgetName + '_collapsed').find('strong').html(displayText);
         }
-
-        // Add click handlers
-        $collapsedDiv.on('click', toggleWidget);
-        $expandedDiv.find(".panel-header").on('click', toggleWidget);
-
-        // Update collapsed view when form fields change
-        var inputIds = ['{{ widget.name }}_street_address', '{{ widget.name }}_street_address_2', '{{ widget.name }}_city', '{{ widget.name }}_state', '{{ widget.name }}_zip_code'];
-        $.each(inputIds, function (index, inputId) {
-            $('#' + inputId).on('change', function () {
-                if ($collapsedDiv.is(':visible')) {
-                    updateCollapsedView();
-                }
-            });
-        });
     });
 </script>
