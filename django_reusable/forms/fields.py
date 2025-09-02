@@ -1,121 +1,70 @@
 from django import forms
 import json
-from ..utils.address_utils import format_us_address
 
-caret_up_svg = '''
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-up" viewBox="0 0 16 16">
-  <path d="M3.204 11h9.592L8 5.519zm-.753-.659 4.796-5.48a1 1 0 0 1 1.506 0l4.796 5.48c.566.647.106 1.659-.753 1.659H3.204a1 1 0 0 1-.753-1.659"/>
-</svg>
-'''
+from .widgets import USAddressWidget
 
-caret_down_svg = '''
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-down-fill" viewBox="0 0 16 16">
-  <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
-</svg>
-'''
 
 class ChoiceFieldNoValidation(forms.ChoiceField):
     """
     An override of django's ChoiceField to ignore validation of the choices.
     Primarily used for cases where the choice fields are assigned options dynamically on the page.
     """
+
     def validate(self, value):
         pass
 
 
-class USAddressWidget(forms.Widget):
-    """
-    A widget that renders multiple input fields for US address components.
-    """
-    template_name = 'django_reusable/widgets/us_address_widget.html'
+class CheckboxMultipleChoiceField(forms.MultipleChoiceField):
+    widget = forms.CheckboxSelectMultiple
 
-    def __init__(self, attrs=None):
-        super().__init__(attrs)
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('max_length', None)
+        kwargs.pop('widget', None)  # We use our own widget
+        super().__init__(*args, **kwargs)
 
-    def format_value(self, value):
-        """Format the value for display in the widget"""
-        if value is None:
-            return {
-                'street_address': '',
-                'street_address_2': '',
-                'city': '',
-                'state': '',
-                'zip_code': ''
-            }
+    def to_python(self, value):
+        """Override to handle JSON string values properly"""
+        if not value:
+            return []
 
+        # If it's already a list, return it
+        if isinstance(value, list):
+            return [str(item) for item in value]
+
+        # If it's a JSON string, parse it
         if isinstance(value, str):
             try:
-                value = json.loads(value)
+                parsed = json.loads(value)
+                if isinstance(parsed, list):
+                    return [str(item) for item in parsed]
+                else:
+                    return [str(parsed)]
             except json.JSONDecodeError:
-                return {
-                    'street_address': '',
-                    'street_address_2': '',
-                    'city': '',
-                    'state': '',
-                    'zip_code': ''
-                }
+                return [str(value)]
 
-        if isinstance(value, dict):
-            return {
-                'street_address': value.get('street_address', ''),
-                'street_address_2': value.get('street_address_2', ''),
-                'city': value.get('city', ''),
-                'state': value.get('state', ''),
-                'zip_code': value.get('zip_code', '')
-            }
+        return [str(value)]
 
-        return {
-            'street_address': '',
-            'street_address_2': '',
-            'city': '',
-            'state': '',
-            'zip_code': ''
-        }
+    def validate(self, value):
+        """Override validation to handle our custom data format"""
+        if self.required and not value:
+            raise forms.ValidationError(self.error_messages['required'], code='required')
 
-    def value_from_datadict(self, data, files, name):
-        """Extract address data from form submission"""
-        return {
-            'street_address': data.get(f'{name}_street_address', ''),
-            'street_address_2': data.get(f'{name}_street_address_2', ''),
-            'city': data.get(f'{name}_city', ''),
-            'state': data.get(f'{name}_state', ''),
-            'zip_code': data.get(f'{name}_zip_code', '')
-        }
+        # Validate each choice
+        if value and self.choices:
+            valid_choices = [str(choice[0]) for choice in self.choices]
+            for item in value:
+                if str(item) not in valid_choices:
+                    raise forms.ValidationError(
+                        self.error_messages['invalid_choice'],
+                        code='invalid_choice',
+                        params={'value': item},
+                    )
 
-    def get_context(self, name, value, attrs):
-        """Get context for template rendering"""
-        context = super().get_context(name, value, attrs)
-
-        formatted_value = self.format_value(value)
-        formatted_display = format_us_address(formatted_value)
-
-        # US states list
-        us_states = [
-            ('', '-- State --'),
-            ('AL', 'Alabama'), ('AK', 'Alaska'), ('AZ', 'Arizona'), ('AR', 'Arkansas'),
-            ('CA', 'California'), ('CO', 'Colorado'), ('CT', 'Connecticut'), ('DE', 'Delaware'),
-            ('FL', 'Florida'), ('GA', 'Georgia'), ('HI', 'Hawaii'), ('ID', 'Idaho'),
-            ('IL', 'Illinois'), ('IN', 'Indiana'), ('IA', 'Iowa'), ('KS', 'Kansas'),
-            ('KY', 'Kentucky'), ('LA', 'Louisiana'), ('ME', 'Maine'), ('MD', 'Maryland'),
-            ('MA', 'Massachusetts'), ('MI', 'Michigan'), ('MN', 'Minnesota'), ('MS', 'Mississippi'),
-            ('MO', 'Missouri'), ('MT', 'Montana'), ('NE', 'Nebraska'), ('NV', 'Nevada'),
-            ('NH', 'New Hampshire'), ('NJ', 'New Jersey'), ('NM', 'New Mexico'), ('NY', 'New York'),
-            ('NC', 'North Carolina'), ('ND', 'North Dakota'), ('OH', 'Ohio'), ('OK', 'Oklahoma'),
-            ('OR', 'Oregon'), ('PA', 'Pennsylvania'), ('RI', 'Rhode Island'), ('SC', 'South Carolina'),
-            ('SD', 'South Dakota'), ('TN', 'Tennessee'), ('TX', 'Texas'), ('UT', 'Utah'),
-            ('VT', 'Vermont'), ('VA', 'Virginia'), ('WA', 'Washington'), ('WV', 'West Virginia'),
-            ('WI', 'Wisconsin'), ('WY', 'Wyoming')
-        ]
-
-        context.update({
-            'formatted_display': formatted_display,
-            'us_states': us_states,
-            'caret_up_svg': caret_up_svg,
-            'caret_down_svg': caret_down_svg,
-            'value': formatted_value,
-        })
-
-        return context
+    def widget_attrs(self, widget):
+        attrs = super().widget_attrs(widget)
+        if isinstance(widget, forms.CheckboxSelectMultiple):
+            attrs['class'] = (attrs.get('class', '') + ' unstyled').strip()
+        return attrs
 
 
 class USAddressFormField(forms.Field):
@@ -180,8 +129,8 @@ class USAddressFormField(forms.Field):
         # Basic zip code validation
         zip_code = str(value['zip_code'])
         if not (len(zip_code) == 5 and zip_code.isdigit()) and not (
-            len(zip_code) == 10 and zip_code[5] == '-' and
-            zip_code[:5].isdigit() and zip_code[6:].isdigit()
+                len(zip_code) == 10 and zip_code[5] == '-' and
+                zip_code[:5].isdigit() and zip_code[6:].isdigit()
         ):
             raise forms.ValidationError("ZIP code must be in format 12345 or 12345-6789.")
 

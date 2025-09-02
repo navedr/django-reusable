@@ -1,9 +1,11 @@
+import json
 import os
 
 from django import forms
 from django.utils.safestring import mark_safe
 
 from django_reusable.utils import xstr
+from django_reusable.utils.address_utils import format_us_address
 
 
 class FileLinkWidget(forms.TextInput):
@@ -88,9 +90,102 @@ class SingleCharSplitInput(forms.TextInput):
                         }); 
                     })
                 </script>
-               ''' % (name, ) + f'''    
+               ''' % (name,) + f'''    
             <div class='single-char-split-inputs'>
                 <div>{"".join(inputs)}</div>
                 {super().render(name, value, attrs, renderer)}
             </div>
         '''
+
+
+class USAddressWidget(forms.Widget):
+    """
+    A widget that renders multiple input fields for US address components.
+    """
+    template_name = 'django_reusable/widgets/us_address_widget.html'
+
+    def __init__(self, attrs=None):
+        super().__init__(attrs)
+
+    def format_value(self, value):
+        """Format the value for display in the widget"""
+        if value is None:
+            return {
+                'street_address': '',
+                'street_address_2': '',
+                'city': '',
+                'state': '',
+                'zip_code': ''
+            }
+
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except json.JSONDecodeError:
+                return {
+                    'street_address': '',
+                    'street_address_2': '',
+                    'city': '',
+                    'state': '',
+                    'zip_code': ''
+                }
+
+        if isinstance(value, dict):
+            return {
+                'street_address': value.get('street_address', ''),
+                'street_address_2': value.get('street_address_2', ''),
+                'city': value.get('city', ''),
+                'state': value.get('state', ''),
+                'zip_code': value.get('zip_code', '')
+            }
+
+        return {
+            'street_address': '',
+            'street_address_2': '',
+            'city': '',
+            'state': '',
+            'zip_code': ''
+        }
+
+    def value_from_datadict(self, data, files, name):
+        """Extract address data from form submission"""
+        return {
+            'street_address': data.get(f'{name}_street_address', ''),
+            'street_address_2': data.get(f'{name}_street_address_2', ''),
+            'city': data.get(f'{name}_city', ''),
+            'state': data.get(f'{name}_state', ''),
+            'zip_code': data.get(f'{name}_zip_code', '')
+        }
+
+    def get_context(self, name, value, attrs):
+        """Get context for template rendering"""
+        context = super().get_context(name, value, attrs)
+
+        formatted_value = self.format_value(value)
+        formatted_display = format_us_address(formatted_value)
+
+        # US states list
+        us_states = [
+            ('', '-- State --'),
+            ('AL', 'Alabama'), ('AK', 'Alaska'), ('AZ', 'Arizona'), ('AR', 'Arkansas'),
+            ('CA', 'California'), ('CO', 'Colorado'), ('CT', 'Connecticut'), ('DE', 'Delaware'),
+            ('FL', 'Florida'), ('GA', 'Georgia'), ('HI', 'Hawaii'), ('ID', 'Idaho'),
+            ('IL', 'Illinois'), ('IN', 'Indiana'), ('IA', 'Iowa'), ('KS', 'Kansas'),
+            ('KY', 'Kentucky'), ('LA', 'Louisiana'), ('ME', 'Maine'), ('MD', 'Maryland'),
+            ('MA', 'Massachusetts'), ('MI', 'Michigan'), ('MN', 'Minnesota'), ('MS', 'Mississippi'),
+            ('MO', 'Missouri'), ('MT', 'Montana'), ('NE', 'Nebraska'), ('NV', 'Nevada'),
+            ('NH', 'New Hampshire'), ('NJ', 'New Jersey'), ('NM', 'New Mexico'), ('NY', 'New York'),
+            ('NC', 'North Carolina'), ('ND', 'North Dakota'), ('OH', 'Ohio'), ('OK', 'Oklahoma'),
+            ('OR', 'Oregon'), ('PA', 'Pennsylvania'), ('RI', 'Rhode Island'), ('SC', 'South Carolina'),
+            ('SD', 'South Dakota'), ('TN', 'Tennessee'), ('TX', 'Texas'), ('UT', 'Utah'),
+            ('VT', 'Vermont'), ('VA', 'Virginia'), ('WA', 'Washington'), ('WV', 'West Virginia'),
+            ('WI', 'Wisconsin'), ('WY', 'Wyoming')
+        ]
+
+        context.update({
+            'formatted_display': formatted_display,
+            'us_states': us_states,
+            'value': formatted_value,
+        })
+
+        return context

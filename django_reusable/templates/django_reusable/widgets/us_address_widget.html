@@ -3,7 +3,7 @@
         border: 1px solid #ddd;
         padding: 10px;
         border-radius: 4px;
-        display: inline-block!important;
+        display: inline-block !important;
         max-width: 300px;
         min-width: 300px;
     }
@@ -32,7 +32,9 @@
         <div class="panel-header">
             <strong>{{ formatted_display }}</strong>
             <span id="{{ widget.name }}_caret">
-                {{ caret_down_svg|safe }}
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-down-fill" viewBox="0 0 16 16">
+                  <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                </svg>
             </span>
         </div>
     </div>
@@ -42,7 +44,10 @@
         <div class="panel-header">
             <strong></strong>
             <span id="{{ widget.name }}_caret_expanded">
-                {{ caret_up_svg|safe }}
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                     class="bi bi-caret-up" viewBox="0 0 16 16">
+                  <path d="M3.204 11h9.592L8 5.519zm-.753-.659 4.796-5.48a1 1 0 0 1 1.506 0l4.796 5.48c.566.647.106 1.659-.753 1.659H3.204a1 1 0 0 1-.753-1.659"/>
+                </svg>
             </span>
         </div>
 
@@ -93,7 +98,7 @@
 </div>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         // Make functions globally available for event handlers
         if (!window.usAddressWidgetFunctions) {
             window.usAddressWidgetFunctions = {
@@ -106,20 +111,20 @@
             window.usAddressWidgetInitialized = true;
 
             // Use event delegation for dynamically added elements - click on panel headers
-            $(document).on('click', '.address-collapsed .panel-header', function() {
+            $(document).on('click', '.address-collapsed .panel-header', function () {
                 var $collapsed = $(this).closest('.address-collapsed');
                 var widgetName = $collapsed.attr('id').replace('_collapsed', '');
                 window.usAddressWidgetFunctions.toggleWidget(widgetName);
             });
 
-            $(document).on('click', '.address-expanded .panel-header', function() {
+            $(document).on('click', '.address-expanded .panel-header', function () {
                 var $expanded = $(this).closest('.address-expanded');
                 var widgetName = $expanded.attr('id').replace('_expanded', '');
                 window.usAddressWidgetFunctions.toggleWidget(widgetName);
             });
 
             // Use event delegation for form field changes
-            $(document).on('change', '[id$="_street_address"], [id$="_street_address_2"], [id$="_city"], [id$="_state"], [id$="_zip_code"]', function() {
+            $(document).on('change', '[id$="_street_address"], [id$="_street_address_2"], [id$="_city"], [id$="_state"], [id$="_zip_code"]', function () {
                 var fieldId = $(this).attr('id');
                 var widgetName = fieldId.replace(/_(?:street_address|street_address_2|city|state|zip_code)$/, '');
                 var $collapsedDiv = $('#' + widgetName + '_collapsed');

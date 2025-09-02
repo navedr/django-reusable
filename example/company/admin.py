@@ -33,21 +33,12 @@ class PersonAdmin(EnhancedAdminMixin):
     inlines = [MusicianInline]
 
     # Fields for the form (actual model fields only)
-    fields = ['first_name', 'last_name', 'position', 'home_address', 'work_address']
+    fields = ['first_name', 'last_name', 'position', 'home_address', 'work_address', 'roles']
 
     # List display can include both model fields and admin methods
     list_display = ['first_name', 'last_name', 'position', 'alert_name', 'say_hello', 'throw_error',
-                    'person_manager', 'person_table', 'test_ajax', 'nom', 'formatted_home_address', 'formatted_work_address']
-
-    def formatted_home_address(self, obj):
-        """Display formatted home address in admin list"""
-        return format_us_address(obj.home_address)
-    formatted_home_address.short_description = 'Home Address'
-
-    def formatted_work_address(self, obj):
-        """Display formatted work address in admin list"""
-        return format_us_address(obj.work_address)
-    formatted_work_address.short_description = 'Work Address'
+                    'person_manager', 'person_table', 'test_ajax', 'nom', 'get_home_address_display',
+                    'get_work_address_display', 'get_roles_display']
 
     """
         List of tuples:
