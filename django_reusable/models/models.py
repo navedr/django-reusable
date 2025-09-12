@@ -56,7 +56,7 @@ class GenericRelationMixin(models.Model):
         abstract = True
 
 
-class ModelUtilsMixin:
+class ModelUtilsMixin(models.Model):
 
     @classmethod
     def get_add_url_name(cls, site='admin'):
@@ -119,7 +119,7 @@ class ModelUtilsMixin:
         abstract = True
 
 
-class TimeStampedModelOnly(models.Model, ModelUtilsMixin):
+class TimeStampedModelOnly(ModelUtilsMixin):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
