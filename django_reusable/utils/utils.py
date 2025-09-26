@@ -29,7 +29,10 @@ from pytz import timezone, utc
 
 from .conversion import is_number, is_int
 
-locale.setlocale(locale.LC_ALL, '')
+try:
+    locale.setlocale(locale.LC_ALL, '')
+except locale.Error:
+    pass
 
 
 def global_request():
