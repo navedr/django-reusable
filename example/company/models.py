@@ -1,6 +1,6 @@
 from django.db import models
 
-from django_reusable.models import TimeStampedModel, USAddressField, MultipleChoiceField
+from django_reusable.models import TimeStampedModel, USAddressField, MultipleChoiceField, CurrencyField
 
 
 class Person(TimeStampedModel):
@@ -22,6 +22,7 @@ class Musician(models.Model):
     instrument = models.CharField(max_length=100)
     concerts = models.ManyToManyField('Concert', through='MusicianConcert')
     address = USAddressField(blank=True, null=True)
+    net_worth = CurrencyField(max_digits=20, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
         return str(self.person)
@@ -36,6 +37,7 @@ class Album(models.Model):
 
 class City(models.Model):
     name = models.CharField(max_length=100)
+    gdp = CurrencyField(max_digits=20, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
         return self.name

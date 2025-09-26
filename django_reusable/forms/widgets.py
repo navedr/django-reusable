@@ -189,3 +189,28 @@ class USAddressWidget(forms.Widget):
         })
 
         return context
+
+
+class CurrencyInput(forms.TextInput):
+    """
+    A widget that formats input as US currency with $ sign and commas on blur
+    """
+
+    class Media:
+        js = ('django_reusable/js/currency-format.js',)
+
+    def __init__(self, attrs=None):
+        default_attrs = {'class': 'currency-input form-control'}
+        if attrs:
+            default_attrs.update(attrs)
+        super().__init__(default_attrs)
+
+    def format_value(self, value):
+        """Format the value for display - keep as plain number for form processing"""
+        if value is None or value == '':
+            return ''
+        try:
+            # Just return the numeric value, let JavaScript handle the display formatting
+            return str(float(value))
+        except (ValueError, TypeError):
+            return str(value) if value else ''

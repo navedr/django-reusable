@@ -1,7 +1,7 @@
 from django import forms
 import json
 
-from .widgets import USAddressWidget
+from .widgets import USAddressWidget, CurrencyInput
 
 
 class ChoiceFieldNoValidation(forms.ChoiceField):
@@ -142,3 +142,11 @@ class USAddressFormField(forms.Field):
             except json.JSONDecodeError:
                 return None
         return value
+
+
+class CurrencyFormField(forms.DecimalField):
+    def __init__(self, *args, **kwargs):
+        kwargs['max_digits'] = kwargs.get('max_digits', 10)
+        kwargs['decimal_places'] = kwargs.get('decimal_places', 2)
+        kwargs['widget'] = kwargs.get('widget', CurrencyInput())
+        super().__init__(*args, **kwargs)

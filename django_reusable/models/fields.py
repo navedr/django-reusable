@@ -2,7 +2,7 @@ import json
 from django.db import models
 from django.core.exceptions import ValidationError
 from ..utils.address_utils import format_us_address
-from django_reusable.forms.fields import USAddressFormField, CheckboxMultipleChoiceField
+from django_reusable.forms.fields import USAddressFormField, CheckboxMultipleChoiceField, CurrencyFormField
 
 
 class MultipleChoiceField(models.TextField):
@@ -202,6 +202,29 @@ class USAddressField(models.TextField):
 
         # Set our custom form field as the default
         defaults = {'form_class': USAddressFormField}
+        defaults.update(kwargs)
+
+        # Call the parent's formfield method with our custom form class
+        return super().formfield(**defaults)
+
+
+class CurrencyField(models.DecimalField):
+    """
+    A Django model field for storing currency values with fixed precision.
+
+    The field uses DecimalField with decimal_places=2 by default.
+    """
+
+    description = "A field for storing currency values"
+
+    def __init__(self, *args, **kwargs):
+        # Set default max_digits and decimal_places if not provided
+        kwargs.setdefault('decimal_places', 2)
+        super().__init__(*args, **kwargs)
+
+    def formfield(self, **kwargs):
+        # Set our custom form field as the default
+        defaults = {'form_class': CurrencyFormField}
         defaults.update(kwargs)
 
         # Call the parent's formfield method with our custom form class
