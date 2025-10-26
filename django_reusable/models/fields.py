@@ -1,6 +1,8 @@
 import json
 from django.db import models
 from django.core.exceptions import ValidationError
+
+from .lookups import JSONExtract
 from ..utils.address_utils import format_us_address
 from django_reusable.forms.fields import USAddressFormField, CheckboxMultipleChoiceField, CurrencyFormField
 
@@ -97,6 +99,7 @@ class MultipleChoiceField(models.TextField):
         defaults = {
             'choices': self.choices,
             'required': not self.blank,
+            'initial': self.get_default(),
         }
         defaults.update(kwargs)
 
@@ -116,9 +119,22 @@ class USAddressField(models.TextField):
         "state": "NY",
         "zip_code": "10001"
     }
+
+    Supports querying by individual properties:
+    - address__street_address='123 Main St'
+    - address__city='New York'
+    - address__state='NY'
+    - address__zip_code='10001'
     """
 
     description = "A field for storing US addresses in JSON format"
+    class_lookups = {
+        'street_address': JSONExtract.create_instance('street_address'),
+        'street_address_2': JSONExtract.create_instance('street_address_2'),
+        'city': JSONExtract.create_instance('city'),
+        'state': JSONExtract.create_instance('state'),
+        'zip_code': JSONExtract.create_instance('zip_code'),
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

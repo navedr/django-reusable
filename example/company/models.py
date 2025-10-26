@@ -11,7 +11,8 @@ class Person(TimeStampedModel):
                                          ('Manager', 'General - Manager')])
     home_address = USAddressField(blank=True, null=True)
     work_address = USAddressField(blank=True, null=True)
-    roles = MultipleChoiceField(choices=[('Admin', 'Admin'), ('User', 'User'), ('Guest', 'Guest')], null=True, blank=True)
+    roles = MultipleChoiceField(choices=[('Admin', 'Admin'), ('User', 'User'), ('Guest', 'Guest')],
+                                null=True, blank=True, default=['Guest'])
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
