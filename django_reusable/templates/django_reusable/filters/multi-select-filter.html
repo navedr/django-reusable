@@ -75,19 +75,13 @@
 
                 // Add selected options
                 var selectedOptions = Array.from(select.selectedOptions);
-                console.log('Filter:', paramName, 'Selected:', selectedOptions.length, 'options');
                 selectedOptions.forEach(function(option) {
-                    console.log('  Adding:', paramName, '=', option.value);
                     params.append(paramName, option.value);
                 });
             });
 
-            // Build final URL
-            var finalUrl = url.pathname + '?' + params.toString();
-            console.log('Navigating to:', finalUrl);
-
             // Navigate to new URL
-            window.location.href = finalUrl;
+            window.location.href = url.pathname + '?' + params.toString();
         };
 
         buttonContainer.appendChild(applyButton);

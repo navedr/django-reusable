@@ -50,7 +50,7 @@ class MultiSelectFilterMixin:
             lookup_field = self.field_path
             try:
                 return queryset.filter(**{f'{lookup_field}__in': values})
-            except Exception as e:
+            except Exception:
                 # Invalid values - return unfiltered queryset
                 return queryset
         return queryset
