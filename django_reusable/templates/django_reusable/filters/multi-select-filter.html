@@ -1,0 +1,97 @@
+{% load i18n %}
+
+<div class="multi-select-filter" style="display: inline-block; vertical-align: top; margin-right: 15px; margin-bottom: 15px;">
+    <div style="display: flex; align-items: flex-start; gap: 10px;">
+        <!-- Label on the left -->
+        <label for="id_{{ spec.parameter_name }}" style="font-weight: bold; padding-top: 5px; white-space: nowrap; text-transform: capitalize;">
+            {% blocktrans with filter_title=spec.title %}{{ filter_title }}:{% endblocktrans %}
+        </label>
+
+        <!-- Multi-select dropdown on the right -->
+        <div>
+            <select multiple
+                    name="{{ spec.parameter_name }}"
+                    id="id_{{ spec.parameter_name }}"
+                    size="8"
+                    class="multi-select-filter-select" style="max-height: 75px">
+                {% for value, label in spec.options %}
+                    <option value="{{ value }}"
+                            {% if value in spec.selected_values %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+
+{#            {% if spec.selected_values %}#}
+{#                <div style="margin-top: 5px;">#}
+{#                    <a href="{{ spec.clear_url }}" style="font-size: 11px;">#}
+{#                        {% trans "Clear filter" %}#}
+{#                    </a>#}
+{#                </div>#}
+{#            {% endif %}#}
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    // Only add the Apply Filters button once
+    if (document.getElementById('multi-select-apply-btn')) {
+        return;
+    }
+
+    // Wait for DOM to be ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Find the filter sidebar
+        var filterSidebar = document.querySelector('#changelist-filter');
+        if (!filterSidebar) return;
+
+        // Check if we have any multi-select filters
+        var multiSelects = document.querySelectorAll('.multi-select-filter-select');
+        if (multiSelects.length === 0) return;
+
+        // Create Apply Filters button
+        var buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = 'margin: 15px 10px; padding-top: 15px; border-top: 1px solid #ddd;';
+
+        var applyButton = document.createElement('button');
+        applyButton.id = 'multi-select-apply-btn';
+        applyButton.type = 'button';
+        applyButton.textContent = '{% trans "Apply Filters" %}';
+        applyButton.style.cssText = 'width: 100%; padding: 8px; font-size: 13px; cursor: pointer;';
+        applyButton.className = 'button';
+
+        applyButton.onclick = function() {
+            // Get current URL
+            var url = new URL(window.location.href);
+            var params = new URLSearchParams(url.search);
+
+            // Process each multi-select filter
+            multiSelects.forEach(function(select) {
+                var paramName = select.name;
+
+                // Remove existing parameters for this filter
+                params.delete(paramName);
+
+                // Add selected options
+                var selectedOptions = Array.from(select.selectedOptions);
+                console.log('Filter:', paramName, 'Selected:', selectedOptions.length, 'options');
+                selectedOptions.forEach(function(option) {
+                    console.log('  Adding:', paramName, '=', option.value);
+                    params.append(paramName, option.value);
+                });
+            });
+
+            // Build final URL
+            var finalUrl = url.pathname + '?' + params.toString();
+            console.log('Navigating to:', finalUrl);
+
+            // Navigate to new URL
+            window.location.href = finalUrl;
+        };
+
+        buttonContainer.appendChild(applyButton);
+        filterSidebar.appendChild(buttonContainer);
+    });
+})();
+</script>

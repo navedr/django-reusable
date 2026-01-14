@@ -4,6 +4,11 @@ from django.urls import reverse, reverse_lazy
 from django.utils.safestring import mark_safe
 
 from django_reusable.admin.mixins import EnhancedAdminMixin, EnhancedAdminInlineMixin
+from django_reusable.admin.filters import (
+    MultiSelectAllValuesFieldFilter,
+    MultiSelectChoicesFieldFilter,
+    MultiSelectRelatedFieldFilter,
+)
 from django_reusable.logging.loggers import PrintLogger
 from django_reusable.models.fields import format_us_address
 from .models import Person, Album, Musician, MusicianConcert, City, Concert
@@ -39,6 +44,14 @@ class PersonAdmin(EnhancedAdminMixin):
     list_display = ['first_name', 'last_name', 'position', 'alert_name', 'say_hello', 'throw_error',
                     'person_manager', 'person_table', 'test_ajax', 'nom', 'get_home_address_display',
                     'get_work_address_display', 'get_roles_display']
+
+    # Multi-select filters
+    list_filter = [
+        # Multi-select for field with choices (value != label)
+        ('position', MultiSelectChoicesFieldFilter),
+        # Multi-select for regular field values
+        ('last_name', MultiSelectAllValuesFieldFilter),
+    ]
 
     """
         List of tuples:
@@ -86,6 +99,14 @@ class MusicianAdmin(EnhancedAdminMixin):
     inlines = [MusicianConcertInline]
     extra_changelist_links = [
         (reverse_lazy('musician_manager'), dict(link_text='Manager', link_class='btn btn-warning', new_tab=True))
+    ]
+
+    # Multi-select filters
+    list_filter = [
+        # Multi-select for ForeignKey
+        ('person', MultiSelectRelatedFieldFilter),
+        # Multi-select for regular field
+        ('instrument', MultiSelectAllValuesFieldFilter),
     ]
 
 
