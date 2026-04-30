@@ -4,6 +4,7 @@ from typing import Optional, List
 from django.apps import apps
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db import models
 
 from django_reusable.logging.loggers import PrintLogger
 
@@ -76,61 +77,107 @@ def list_models_and_fields(app_label: Optional[str] = None,
     return json.dumps(result, cls=DjangoJSONEncoder)
 
 
-def query_model(model_name: str, filters: Optional[str] = None,
-                fields: Optional[str] = None, order_by: Optional[str] = None,
-                limit: int = 50, count_only: bool = False,
+AGGREGATE_FUNCTIONS = {
+    'count': models.Count,
+    'sum': models.Sum,
+    'avg': models.Avg,
+    'min': models.Min,
+    'max': models.Max,
+}
+
+
+def _resolve_model(model_name, allowed_apps=None):
+    parts = model_name.split('.')
+    if len(parts) != 2:
+        return None, f"model_name must be 'app_label.model_name', got '{model_name}'"
+    app_label, model_label = parts
+
+    project_apps = allowed_apps or get_project_app_labels()
+    if app_label not in project_apps:
+        return None, f"App '{app_label}' is not available for querying."
+
+    try:
+        return apps.get_model(app_label, model_label), None
+    except LookupError:
+        return None, f"Model '{model_name}' not found."
+
+
+def _build_queryset(model, filters=None, exclude=None):
+    qs = model.objects.all()
+    if filters:
+        qs = qs.filter(**filters)
+    if exclude:
+        qs = qs.exclude(**exclude)
+    return qs, None
+
+
+def query_model(model_name: str, options: Optional[dict] = None,
                 allowed_apps: Optional[List[str]] = None) -> str:
     """Query a Django model using ORM filters.
 
     Args:
         model_name: 'app_label.model_name' (e.g. 'properties.property').
-        filters: JSON string of ORM filter kwargs.
-        fields: Comma-separated field names for .values(). Omit for all concrete fields.
-        order_by: Comma-separated field names for ordering. Prefix with - for descending.
-        limit: Max results (default 50).
-        count_only: If True, return only the total count without fetching rows.
+        options: dict with query options. All keys are optional:
+            - filters: ORM filter kwargs (e.g. {"status": "Active", "expiry_date__lte": "2026-12-31"}).
+            - exclude: ORM exclude kwargs (e.g. {"status": "Sold"}).
+            - fields: list of field names for .values(). Supports FK traversal
+                with __ (e.g. ["id", "tenant__name", "property_units__property__address"]).
+            - order_by: list of field names for ordering. Prefix with - for descending.
+            - limit: max results (default 50).
+            - count_only: if true, return only the total count.
+            - distinct_field: get distinct values for this field (e.g. "status").
+            - aggregate: dict of aggregations. Keys are output names, values have
+                'func' (count/sum/avg/min/max) and 'field'.
+                Example: {"total": {"func": "sum", "field": "amount"}}
         allowed_apps: List of app labels allowed. Defaults to project apps.
 
     Returns:
         JSON string with query results. Always includes 'total_count' (before limit).
     """
     try:
-        parts = model_name.split('.')
-        if len(parts) != 2:
-            return json.dumps({'error': f"model_name must be 'app_label.model_name', got '{model_name}'"})
-        app_label, model_label = parts
+        model, error = _resolve_model(model_name, allowed_apps)
+        if error:
+            return json.dumps({'error': error})
 
-        project_apps = allowed_apps or get_project_app_labels()
-        if app_label not in project_apps:
-            return json.dumps({'error': f"App '{app_label}' is not available for querying."})
+        opts = options or {}
 
-        try:
-            model = apps.get_model(app_label, model_label)
-        except LookupError:
-            return json.dumps({'error': f"Model '{model_name}' not found."})
-
-        qs = model.objects.all()
-
-        if filters:
-            try:
-                filter_kwargs = json.loads(filters)
-            except json.JSONDecodeError:
-                return json.dumps({'error': f"Invalid filters JSON: {filters}"})
-            qs = qs.filter(**filter_kwargs)
+        qs, error = _build_queryset(model, opts.get('filters'), opts.get('exclude'))
+        if error:
+            return json.dumps({'error': error})
 
         total_count = qs.count()
 
-        if count_only:
+        if opts.get('count_only'):
             return json.dumps({'total_count': total_count}, cls=DjangoJSONEncoder)
 
-        if order_by:
-            qs = qs.order_by(*[f.strip() for f in order_by.split(',')])
+        distinct_field = opts.get('distinct_field')
+        if distinct_field:
+            values = list(qs.values_list(distinct_field, flat=True).distinct().order_by(distinct_field))
+            return json.dumps({'field': distinct_field, 'total_count': len(values), 'values': values},
+                              cls=DjangoJSONEncoder)
 
+        aggregate = opts.get('aggregate')
+        if aggregate:
+            agg_kwargs = {}
+            for name, spec in aggregate.items():
+                func = AGGREGATE_FUNCTIONS.get(spec['func'].lower())
+                if not func:
+                    return json.dumps({'error': f"Unknown aggregate function: {spec['func']}"})
+                agg_kwargs[name] = func(spec['field'])
+            result = qs.aggregate(**agg_kwargs)
+            result['total_count'] = total_count
+            return json.dumps(result, cls=DjangoJSONEncoder)
+
+        order_by = opts.get('order_by')
+        if order_by:
+            qs = qs.order_by(*order_by)
+
+        limit = opts.get('limit', 50)
         qs = qs[:limit]
 
+        fields = opts.get('fields')
         if fields:
-            field_list = [f.strip() for f in fields.split(',')]
-            data = list(qs.values(*field_list))
+            data = list(qs.values(*fields))
         else:
             concrete_fields = [
                 f.name for f in model._meta.get_fields()
