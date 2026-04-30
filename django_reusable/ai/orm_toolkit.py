@@ -78,7 +78,8 @@ def list_models_and_fields(app_label: Optional[str] = None,
 
 def query_model(model_name: str, filters: Optional[str] = None,
                 fields: Optional[str] = None, order_by: Optional[str] = None,
-                limit: int = 50, allowed_apps: Optional[List[str]] = None) -> str:
+                limit: int = 50, count_only: bool = False,
+                allowed_apps: Optional[List[str]] = None) -> str:
     """Query a Django model using ORM filters.
 
     Args:
@@ -87,10 +88,11 @@ def query_model(model_name: str, filters: Optional[str] = None,
         fields: Comma-separated field names for .values(). Omit for all concrete fields.
         order_by: Comma-separated field names for ordering. Prefix with - for descending.
         limit: Max results (default 50).
+        count_only: If True, return only the total count without fetching rows.
         allowed_apps: List of app labels allowed. Defaults to project apps.
 
     Returns:
-        JSON string with query results.
+        JSON string with query results. Always includes 'total_count' (before limit).
     """
     try:
         parts = model_name.split('.')
@@ -116,6 +118,11 @@ def query_model(model_name: str, filters: Optional[str] = None,
                 return json.dumps({'error': f"Invalid filters JSON: {filters}"})
             qs = qs.filter(**filter_kwargs)
 
+        total_count = qs.count()
+
+        if count_only:
+            return json.dumps({'total_count': total_count}, cls=DjangoJSONEncoder)
+
         if order_by:
             qs = qs.order_by(*[f.strip() for f in order_by.split(',')])
 
@@ -131,7 +138,7 @@ def query_model(model_name: str, filters: Optional[str] = None,
             ]
             data = list(qs.values(*concrete_fields))
 
-        return json.dumps({'count': len(data), 'results': data}, cls=DjangoJSONEncoder)
+        return json.dumps({'total_count': total_count, 'count': len(data), 'results': data}, cls=DjangoJSONEncoder)
 
     except Exception as e:
         logger.error(f"query_model failed: model={model_name}, error={e}")
