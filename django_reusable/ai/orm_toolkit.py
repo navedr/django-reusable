@@ -21,6 +21,21 @@ def get_project_app_labels():
     })
 
 
+def get_app_models_summary(allowed_apps=None):
+    """Generate a text summary of project apps and their models for use in LLM prompts."""
+    project_apps = allowed_apps or get_project_app_labels()
+    lines = []
+    for label in project_apps:
+        try:
+            app_config = apps.get_app_config(label)
+        except LookupError:
+            continue
+        model_names = [m.__name__ for m in app_config.get_models()]
+        if model_names:
+            lines.append(f'- "{label}" app: {", ".join(model_names)}')
+    return '\n'.join(lines)
+
+
 def _get_field_info(field):
     field_type = type(field).__name__
     info = {'name': field.name, 'type': field_type}
