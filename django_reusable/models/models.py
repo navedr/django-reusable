@@ -113,7 +113,7 @@ class GenericRelationMixin(models.Model):
         abstract = True
 
 
-class ModelUtilsMixin(models.Model):
+class ModelUtilsMixin:
     """Mixin providing Django admin URL helpers for model instances and classes.
 
     Adds class methods and instance methods/properties for generating admin
@@ -195,11 +195,8 @@ class ModelUtilsMixin(models.Model):
     def get_property(self, name, fn):
         return get_property(self, name, fn)
 
-    class Meta:
-        abstract = True
 
-
-class TimeStampedModelOnly(ModelUtilsMixin):
+class TimeStampedModelOnly(ModelUtilsMixin, models.Model):
     """Abstract base model with automatic ``created`` and ``modified`` timestamps.
 
     Inherits admin URL helpers from ``ModelUtilsMixin`` but does not include
