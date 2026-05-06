@@ -431,6 +431,11 @@ class EnhancedAdminMixin(admin.ModelAdmin,
             e.g. ``[('first_name__icontains', 'First Name')]``.
         search_in_required: If True, a search query without a "Search In"
             selection shows a warning and returns no results. Defaults to False.
+        lazy_load_fields: List of readonly field names whose content should be
+            fetched asynchronously after page load. The field method should
+            return a placeholder (e.g. "Loading..."), and a corresponding
+            ``get_<field_name>_content(self, obj)`` method provides the real
+            content via an AJAX endpoint. Requires ``auto_update_template=True``.
 
     Example:
         ```python
@@ -449,6 +454,13 @@ class EnhancedAdminMixin(admin.ModelAdmin,
             custom_fields = [
                 ('nom', lambda instance: instance.first_name),
             ]
+            lazy_load_fields = ['expensive_field']
+
+            def expensive_field(self, instance):
+                return 'Loading...'
+
+            def get_expensive_field_content(self, instance):
+                return instance.compute_something_slow()
         ```
     """
     auto_update_template = True
@@ -615,6 +627,15 @@ class EnhancedAdminMixin(admin.ModelAdmin,
             remove_from_fieldsets(fieldsets, field_exclusions)
         return fieldsets
 
+    lazy_load_fields = []
+
+    def _get_lazy_field_content(self, request, object_id, field_name):
+        method = getattr(self, f'get_{field_name}_content', None)
+        if method:
+            obj = self.model.objects.get(pk=object_id)
+            return HttpResponse(method(obj))
+        return HttpResponse('')
+
     def _get_common_mixin_js_data(self):
         return dict(
             app=self.model._meta.app_label,
@@ -632,6 +653,7 @@ class EnhancedAdminMixin(admin.ModelAdmin,
         return JsonResponse(dict(
             **self._get_common_mixin_js_data(),
             hide_save_buttons=self.hide_save_buttons(request, object_id),
+            lazy_load_fields=self.lazy_load_fields if object_id else [],
             **super()._change_form_mixin_js_data(request, object_id)
         ), encoder=CustomEncoder)
 
@@ -651,6 +673,9 @@ class EnhancedAdminMixin(admin.ModelAdmin,
             path('ajax-action/<path:name>/<path:object_id>/',
                  self.ajax_action_callback,
                  name='%s_%s-dr-ajax-action' % info),
+            path('<path:object_id>/change/dr-lazy-field/<str:field_name>/',
+                 self._get_lazy_field_content,
+                 name='%s_%s-dr-lazy-field' % info),
         ]
 
         def get_action_link_view(_view_name, _attrs):

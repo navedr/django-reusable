@@ -37,6 +37,23 @@ const EnhancedAdminMixin = {
                 $(".submit-row").append($button);
             });
         }
+        this.loadLazyFields(data.lazy_load_fields || []);
+    },
+    loadLazyFields: function (fields) {
+        fields.forEach(function (fieldName) {
+            var $container = $(".field-" + fieldName + " .readonly");
+            if (!$container.length) {
+                $container = $(".field-" + fieldName + " div > p");
+            }
+            if (!$container.length) return;
+            var url = location.pathname + "dr-lazy-field/" + fieldName + "/";
+            $container.html('<span style="color:#999">Loading...</span>');
+            fetch(url).then(function (r) { return r.text(); }).then(function (html) {
+                $container.html(html);
+            }).catch(function () {
+                $container.html('<span style="color:red">Failed to load</span>');
+            });
+        });
     },
     handleAjaxFields: function () {
         $(".dr-ajax-action-btn").click(function (e) {
