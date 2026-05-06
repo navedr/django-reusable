@@ -5,6 +5,10 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
+    replaces = [
+        ('django_reusable', '0002_auto_20230920_1601'),
+    ]
+
     dependencies = [
         ('django_reusable', '0001_initial'),
     ]
