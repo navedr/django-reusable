@@ -1,0 +1,96 @@
+site_name: django-reusable
+site_url: https://navedr.github.io/django-reusable/
+site_description: A collection of reusable utilities for Django projects
+repo_url: https://github.com/navedr/django-reusable
+repo_name: navedr/django-reusable
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+    - toc.follow
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            docstring_style: google
+            show_source: false
+            show_root_heading: true
+            show_root_full_path: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            members_order: source
+            merge_init_into_class: true
+            show_if_no_docstring: false
+            heading_level: 2
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - API Reference:
+    - Admin:
+      - Mixins: api/admin-mixins.md
+      - Filters: api/admin-filters.md
+      - Actions: api/admin-actions.md
+    - Views: api/views.md
+    - Models:
+      - Mixins: api/model-mixins.md
+      - Fields: api/model-fields.md
+    - Forms:
+      - Fields: api/form-fields.md
+      - Widgets: api/form-widgets.md
+      - Classes: api/form-classes.md
+      - Validators: api/form-validators.md
+    - Middleware: api/middleware.md
+    - AI ORM Toolkit: api/ai-toolkit.md
+    - Tables: api/tables.md
+    - Database: api/database.md
+    - Template Tags: api/templatetags.md
+    - Utilities:
+      - General: api/utils.md
+      - Date: api/date-utils.md
+      - Decorators: api/decorators.md
+      - Export: api/export-utils.md
+      - User: api/user-utils.md
+    - Logging: api/logging.md
+  - Settings Reference: settings.md

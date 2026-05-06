@@ -2,6 +2,16 @@ THEME_COLORS = {}
 
 
 def clamp(val, minimum=0, maximum=255):
+    """Clamp a numeric value to the given range.
+
+    Args:
+        val: The value to clamp.
+        minimum: Lower bound (inclusive). Defaults to 0.
+        maximum: Upper bound (inclusive). Defaults to 255.
+
+    Returns:
+        The clamped value.
+    """
     if val < minimum:
         return minimum
     if val > maximum:
@@ -39,6 +49,17 @@ def colorscale(color_hex, scale_factor):
 
 
 def generate_admin_theme_colors():
+    """Generate admin theme color overrides from Django settings.
+
+    Reads ``REUSABLE_ADMIN_THEME_OVERRIDE`` from ``settings`` and populates
+    the module-level ``THEME_COLORS`` dict with computed CSS color values.
+
+    Supported settings keys:
+
+    - ``background_color``: Base hex color scaled at 3 brightness levels.
+    - ``link_color``: Base hex color for links, hover, and visited states.
+    - ``text_color``: Direct text color override.
+    """
     from django.conf import settings
 
     theme_overrides = getattr(settings, 'REUSABLE_ADMIN_THEME_OVERRIDE', {})

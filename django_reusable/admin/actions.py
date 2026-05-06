@@ -5,10 +5,31 @@ from collections import OrderedDict
 
 def export_as_csv_action(description="Export selected as CSV file",
                          fields=None, exclude=None, header=True):
-    """
-    This function returns an export csv action
-    'fields' and 'exclude' work like in django ModelForm
-    'header' is whether or not to output the column names as the first row
+    """Return a Django admin action that exports selected rows as a CSV file.
+
+    Works like Django ``ModelForm`` field selection: specify ``fields`` to
+    include only those columns, or ``exclude`` to remove specific columns.
+    If neither is given, all model fields are exported.
+
+    Args:
+        description: Short description shown in the admin actions dropdown.
+        fields: List of field names (or related lookups) to include. When
+            provided, columns appear in the given order.
+        exclude: List of field names to exclude. Ignored if ``fields`` is set.
+        header: If True, the first CSV row contains column headers using
+            the field's ``verbose_name``.
+
+    Returns:
+        An admin action callable suitable for ``actions = [export_as_csv_action()]``.
+
+    Example:
+        ```python
+        class MyAdmin(admin.ModelAdmin):
+            actions = [export_as_csv_action(
+                description="Download CSV",
+                fields=['first_name', 'last_name', 'email'],
+            )]
+        ```
     """
     def export_as_csv(modeladmin, request, queryset):
         """

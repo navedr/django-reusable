@@ -8,11 +8,25 @@ from django_reusable.forms.fields import USAddressFormField, CheckboxMultipleCho
 
 
 class MultipleChoiceField(models.TextField):
-    """
-    A Django model field for storing multiple choice selections in JSON format.
+    """Model field that stores multiple choice selections as a JSON array.
 
-    The field stores selected values as a JSON array:
-    ["choice1", "choice2", "choice3"]
+    Stores values as a JSON array in a TextField (e.g. ``["Admin", "User"]``).
+    Renders as checkboxes in forms via ``CheckboxMultipleChoiceField``. Automatically
+    adds a ``get_<field>_display()`` method to the model that returns a
+    comma-separated string of selected values.
+
+    Example:
+        ```python
+        class Person(TimeStampedModel):
+            roles = MultipleChoiceField(
+                choices=[('Admin', 'Admin'), ('User', 'User'), ('Guest', 'Guest')],
+                null=True, blank=True, default=['Guest'],
+            )
+
+        person = Person.objects.first()
+        person.roles                  # ['Admin', 'User']
+        person.get_roles_display()    # 'Admin, User'
+        ```
     """
 
     description = "A field for storing multiple choice selections as JSON array"
@@ -108,23 +122,37 @@ class MultipleChoiceField(models.TextField):
 
 
 class USAddressField(models.TextField):
-    """
-    A Django model field for storing US addresses in JSON format.
+    """Model field that stores a US address as a JSON object.
 
-    The field stores address data as a JSON object with the following structure:
-    {
-        "street_address": "123 Main St",
-        "street_address_2": "Apt 4B",  # Optional
-        "city": "New York",
-        "state": "NY",
-        "zip_code": "10001"
-    }
+    Stored format:
 
-    Supports querying by individual properties:
-    - address__street_address='123 Main St'
-    - address__city='New York'
-    - address__state='NY'
-    - address__zip_code='10001'
+        {"street_address": "123 Main St", "street_address_2": "Apt 4B",
+         "city": "New York", "state": "NY", "zip_code": "10001"}
+
+    Renders in forms as five separate inputs (street, street 2, city, state
+    dropdown, ZIP) via ``USAddressWidget``. Automatically adds a
+    ``get_<field>_display()`` method that returns a formatted address string.
+
+    Supports querying individual components via custom lookups:
+
+    - ``address__city='New York'``
+    - ``address__state='NY'``
+    - ``address__zip_code='10001'``
+    - ``address__city__icontains='new'``
+
+    Example:
+        ```python
+        class Person(TimeStampedModel):
+            home_address = USAddressField(blank=True, null=True)
+
+        person = Person.objects.first()
+        person.home_address              # {'street_address': '...', ...}
+        person.get_home_address_display() # '123 Main St, New York, NY 10001'
+
+        # Query by component
+        Person.objects.filter(home_address__state='NY')
+        Person.objects.filter(home_address__city__icontains='york')
+        ```
     """
 
     description = "A field for storing US addresses in JSON format"
@@ -225,10 +253,17 @@ class USAddressField(models.TextField):
 
 
 class CurrencyField(models.DecimalField):
-    """
-    A Django model field for storing currency values with fixed precision.
+    """DecimalField pre-configured for currency values.
 
-    The field uses DecimalField with decimal_places=2 by default.
+    Defaults to ``decimal_places=2``. Renders in forms with ``CurrencyInput``,
+    which adds client-side ``$`` formatting and comma separators.
+
+    Example:
+        ```python
+        class Musician(models.Model):
+            net_worth = CurrencyField(max_digits=20, decimal_places=2,
+                                      null=True, blank=True)
+        ```
     """
 
     description = "A field for storing currency values"

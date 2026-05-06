@@ -5,9 +5,16 @@ from .widgets import USAddressWidget, CurrencyInput
 
 
 class ChoiceFieldNoValidation(forms.ChoiceField):
-    """
-    An override of django's ChoiceField to ignore validation of the choices.
-    Primarily used for cases where the choice fields are assigned options dynamically on the page.
+    """ChoiceField that skips server-side choice validation.
+
+    Use when choices are populated dynamically via JavaScript on the client side,
+    so the submitted value may not be in the server-defined choices list.
+
+    Example:
+        ```python
+        class MyForm(forms.Form):
+            category = ChoiceFieldNoValidation(choices=[])
+        ```
     """
 
     def validate(self, value):
@@ -15,6 +22,12 @@ class ChoiceFieldNoValidation(forms.ChoiceField):
 
 
 class CheckboxMultipleChoiceField(forms.MultipleChoiceField):
+    """MultipleChoiceField that renders as checkboxes and handles JSON serialization.
+
+    Used as the default form field for ``MultipleChoiceField`` (model field).
+    Accepts and produces Python lists; handles JSON string input from the
+    database transparently.
+    """
     widget = forms.CheckboxSelectMultiple
 
     def __init__(self, *args, **kwargs):
@@ -68,9 +81,17 @@ class CheckboxMultipleChoiceField(forms.MultipleChoiceField):
 
 
 class USAddressFormField(forms.Field):
-    """
-    A form field for US addresses that renders as multiple input fields
-    and validates the complete address data.
+    """Form field for US addresses with multi-component input and validation.
+
+    Renders as five separate inputs (street, street line 2, city, state dropdown,
+    ZIP code) via ``USAddressWidget``. Produces a dict with keys
+    ``street_address``, ``street_address_2``, ``city``, ``state``, ``zip_code``.
+
+    Validates that required address components are present, state is a 2-letter
+    code, and ZIP matches ``XXXXX`` or ``XXXXX-XXXX`` format.
+
+    This is the default form field for ``USAddressField`` (model field) and
+    is normally not used directly.
     """
     widget = USAddressWidget
 
@@ -145,6 +166,14 @@ class USAddressFormField(forms.Field):
 
 
 class CurrencyFormField(forms.DecimalField):
+    """DecimalField for currency input with client-side formatting.
+
+    Defaults to ``max_digits=10`` and ``decimal_places=2``. Uses
+    ``CurrencyInput`` widget which adds ``$`` sign and comma separators via
+    JavaScript on blur.
+
+    This is the default form field for ``CurrencyField`` (model field).
+    """
     def __init__(self, *args, **kwargs):
         kwargs['max_digits'] = kwargs.get('max_digits', 10)
         kwargs['decimal_places'] = kwargs.get('decimal_places', 2)

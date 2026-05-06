@@ -4,6 +4,7 @@ dist
 build
 .DS_Store
 docs/_build
+site
 .idea
 *.sqlite3
 .claude

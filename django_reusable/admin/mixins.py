@@ -16,8 +16,30 @@ from django_reusable.utils import ifilter, CustomEncoder, find
 
 
 class EnhancedAdminInlineMixin(InlineModelAdmin):
-    """
-        Auto update template with all the extras and
+    """Enhanced inline mixin with select2 support and queryset customization.
+
+    Provides auto-updating templates, Select2 widget integration for inline
+    fields, and fine-grained control over field querysets.
+
+    Attributes:
+        auto_update_template: If True, uses the enhanced admin inline template
+            that supports dynamic JS updates. Defaults to True.
+        select2_inlines_fields: List of field names to render with Select2 widgets.
+        default_field_queryset: Dict mapping field names to default querysets,
+            e.g. ``{'city': City.objects.filter(active=True)}``.
+        limit_field_queryset_model_fields: Dict mapping inline field names to
+            parent model fields used to filter the inline queryset,
+            e.g. ``{'city': 'country'}``.
+        limit_saved_queryset_value_fields: List of field names whose querysets
+            should be limited to the currently saved value for existing rows.
+
+    Example:
+        ```python
+        class MusicianConcertInline(EnhancedAdminInlineMixin, admin.TabularInline):
+            model = MusicianConcert
+            extra = 0
+            select2_inlines_fields = ['city']
+        ```
     """
     auto_update_template = True
     select2_inlines_fields = []
@@ -54,6 +76,18 @@ class EnhancedAdminInlineMixin(InlineModelAdmin):
 
 
 class EnhancedBaseAdminMixin(BaseModelAdmin):
+    """Base admin mixin that restricts delete permissions to object owners.
+
+    When ``only_delete_owned`` is True, only the user referenced by
+    ``user_field`` on the model instance (or users with the ``user.is_admin``
+    permission) can delete that object.
+
+    Attributes:
+        user_field: Name of the ForeignKey field on the model that points to
+            the owning user. Defaults to ``'created_by'``.
+        only_delete_owned: If True, non-admin users can only delete objects
+            they own. Defaults to False.
+    """
     user_field = 'created_by'
     only_delete_owned = False
 
@@ -65,10 +99,33 @@ class EnhancedBaseAdminMixin(BaseModelAdmin):
 
 
 class AjaxActionMixin:
-    """
-        List of tuples:
-        ('field_name', dict(btn_text: str, btn_class: str, additional_html: str, callback: fn(admin, request, pk),
-                            short_desc: str, confirm: str))
+    """Mixin that adds AJAX-powered action buttons to admin list rows.
+
+    Each entry in ``ajax_action_fields`` renders as a button in the changelist
+    that triggers a server-side callback via AJAX without a full page reload.
+
+    Attributes:
+        ajax_action_fields: List of ``(field_name, config)`` tuples where
+            ``config`` is a dict with keys:
+
+            - ``btn_text`` (str): Button label.
+            - ``btn_class`` (str): CSS classes. Defaults to ``'btn btn-warning'``.
+            - ``additional_html`` (str): Extra HTML appended after the button.
+            - ``callback`` (callable): ``fn(admin, request, pk)`` invoked on click.
+            - ``short_desc`` (str): Column header text.
+            - ``confirm`` (str): Confirmation prompt shown before the action.
+
+    Example:
+        ```python
+        ajax_action_fields = [
+            ('test_ajax', dict(
+                btn_text='Test Ajax',
+                additional_html='<b>hi</b>',
+                callback=lambda admin, request, pk: f"done {pk}!",
+                confirm='Are you sure?',
+            )),
+        ]
+        ```
     """
     ajax_action_fields = []
 
@@ -108,9 +165,28 @@ class AjaxActionMixin:
 
 
 class ExtraChangelistLinksMixin:
-    """
-        List of tuples:
-        (url, dict(link_text, link_class, new_tab, user_passes_test))
+    """Mixin that adds extra link buttons to the admin changelist view.
+
+    Attributes:
+        extra_changelist_links: List of ``(url, config)`` tuples where
+            ``config`` is a dict with keys:
+
+            - ``link_text`` (str): Link label. Defaults to ``'Link'``.
+            - ``link_class`` (str): CSS classes. Defaults to ``'btn-link'``.
+            - ``new_tab`` (bool): Open in a new tab. Defaults to False.
+            - ``user_passes_test`` (callable): ``fn(user) -> bool`` to
+              conditionally show the link. Defaults to always visible.
+
+    Example:
+        ```python
+        extra_changelist_links = [
+            (reverse_lazy('person_manager'), dict(
+                link_text='Manager',
+                link_class='btn btn-warning',
+                new_tab=True,
+            )),
+        ]
+        ```
     """
     extra_changelist_links = []
 
@@ -148,10 +224,39 @@ class ExtraChangelistLinksMixin:
 
 
 class ExtraChangeFormButtonsMixin:
-    """
-        List of tuples:
-        ('name', dict(btn_text: str, btn_class: str, stay_on_page: bool, custom_redirect: bool, confirm: str,
-         callback: fn(admin, request, pk), user_passes_test: fn(user), pk_passes_test: fn(pk)))
+    """Mixin that adds extra submit buttons to the admin change form.
+
+    Buttons appear alongside the default save buttons and trigger custom
+    callbacks on form submission.
+
+    Attributes:
+        extra_change_form_buttons: List of ``(name, config)`` tuples where
+            ``config`` is a dict with keys:
+
+            - ``btn_text`` (str): Button label. Defaults to ``'Button'``.
+            - ``btn_class`` (str): CSS classes. Defaults to ``'btn-primary'``.
+            - ``stay_on_page`` (bool): Redirect back to the same change form
+              after the callback. Defaults to False.
+            - ``custom_redirect`` (bool): If True, the callback's return value
+              is used as the HTTP response. Defaults to False.
+            - ``confirm`` (str): Confirmation prompt before submission.
+            - ``callback`` (callable): ``fn(admin, request, pk)`` invoked when
+              the button is clicked. Return a message string or an
+              ``HttpResponse`` (when ``custom_redirect=True``).
+            - ``user_passes_test`` (callable): ``fn(user) -> bool``.
+            - ``pk_passes_test`` (callable): ``fn(pk) -> bool``.
+
+    Example:
+        ```python
+        extra_change_form_buttons = [
+            ('test', dict(
+                btn_text='Test',
+                btn_class='btn-warning',
+                stay_on_page=True,
+                callback=lambda admin, request, pk: print("clicked", pk),
+            )),
+        ]
+        ```
     """
     extra_change_form_buttons = []
 
@@ -208,9 +313,25 @@ class ExtraChangeFormButtonsMixin:
 
 
 class CustomFieldsMixin:
-    """
-        List of tuples:
-        ('field_name', lambda instance: instance.field.name, optional short_desc)
+    """Mixin that adds computed read-only fields to the admin.
+
+    Each entry becomes a callable on the admin class and is automatically
+    added to ``readonly_fields``.
+
+    Attributes:
+        custom_fields: List of tuples in the format
+            ``(field_name, callable, short_desc)`` where:
+
+            - ``field_name`` (str): Name used as the attribute and column key.
+            - ``callable``: ``fn(instance)`` returning the display value.
+            - ``short_desc`` (str, optional): Column header text.
+
+    Example:
+        ```python
+        custom_fields = [
+            ('nom', lambda instance: instance.first_name, 'Nickname'),
+        ]
+        ```
     """
     custom_fields = []
 
@@ -225,10 +346,39 @@ class CustomFieldsMixin:
 
 
 class ActionLinksMixin:
-    """
-        List of tuples:
-        ('name', dict(btn_text, btn_class, callback, short_desc, custom_redirect))
-        Note: callback is called with args (instance)
+    """Mixin that adds clickable action link buttons per row in the changelist.
+
+    Each action link renders as a button that navigates to a custom URL
+    endpoint, executes a callback with the model instance, and redirects back.
+
+    Attributes:
+        action_links: List of ``(name, config)`` tuples where ``config`` is
+            a dict with keys:
+
+            - ``btn_text`` (str): Button label.
+            - ``btn_class`` (str): CSS classes for the ``<a>`` tag.
+            - ``callback`` (callable): ``fn(instance)`` called when clicked.
+              Required -- entries without ``callback`` are skipped.
+            - ``short_desc`` (str): Column header text.
+            - ``custom_redirect`` (bool): If True, the callback's return value
+              is used as the HTTP response instead of redirecting back.
+
+    Example:
+        ```python
+        action_links = [
+            ('alert_name', dict(
+                btn_text='Alert Name',
+                btn_class='btn-info',
+                callback=lambda instance: logger.info(instance),
+            )),
+            ('go_to_page', dict(
+                btn_text='View',
+                btn_class='btn-primary',
+                custom_redirect=True,
+                callback=lambda instance: redirect(instance.get_absolute_url()),
+            )),
+        ]
+        ```
     """
     action_links = []
 
@@ -261,12 +411,50 @@ class EnhancedAdminMixin(admin.ModelAdmin,
                          AjaxActionMixin,
                          CustomFieldsMixin,
                          ActionLinksMixin):
-    """
-    Auto update template with all the extras and
+    """Main enhanced admin mixin combining all django-reusable admin features.
+
+    Combines ``EnhancedBaseAdminMixin``, ``ExtraChangelistLinksMixin``,
+    ``ExtraChangeFormButtonsMixin``, ``AjaxActionMixin``, ``CustomFieldsMixin``,
+    and ``ActionLinksMixin`` into a single drop-in replacement for
+    ``admin.ModelAdmin``.
+
+    Attributes:
+        auto_update_template: If True, uses enhanced JS-driven templates that
+            inject extra links, buttons, and AJAX actions dynamically.
+            Defaults to True.
+        default_filters: List of default query-string filter expressions
+            applied when navigating to the changelist without explicit filters,
+            e.g. ``['status=active', 'archived=false']``.
+        search_in_choices: List of ``(field_lookup, label)`` tuples that
+            populate a "Search In" dropdown filter, allowing users to search
+            within a specific field,
+            e.g. ``[('first_name__icontains', 'First Name')]``.
+        search_in_required: If True, a search query without a "Search In"
+            selection shows a warning and returns no results. Defaults to False.
+
+    Example:
+        ```python
+        class PersonAdmin(EnhancedAdminMixin):
+            action_links = [
+                ('alert_name', dict(btn_text='Alert', btn_class='btn-info',
+                                    callback=lambda inst: logger.info(inst))),
+            ]
+            extra_changelist_links = [
+                (reverse_lazy('person_manager'), dict(
+                    link_text='Manager', link_class='btn btn-warning', new_tab=True)),
+            ]
+            ajax_action_fields = [
+                ('test_ajax', dict(btn_text='Test', callback=lambda a, r, pk: "done")),
+            ]
+            custom_fields = [
+                ('nom', lambda instance: instance.first_name),
+            ]
+        ```
     """
     auto_update_template = True
     default_filters = []
     search_in_choices = []
+    search_in_required = False
 
     def _apply_search_in_choices(self):
         if self.search_in_choices:
@@ -286,24 +474,50 @@ class EnhancedAdminMixin(admin.ModelAdmin,
     def get_search_fields(self, request):
         search_fields = deepcopy(self.search_fields)
         if self.search_in_choices:
-            search_fields = [request.GET.get(SearchInFilter.parameter_name)] if request.GET.get(
-                SearchInFilter.parameter_name) else (search_fields or self.base_search_fields)
+            search_in_value = request.GET.get(SearchInFilter.parameter_name)
+            if search_in_value:
+                search_fields = [search_in_value]
+            elif self.search_in_required and request.GET.get('q', '').strip():
+                messages.warning(request, 'Please select a "Search In" option to search.')
+                search_fields = []
+            else:
+                search_fields = search_fields or self.base_search_fields
         return search_fields
 
     def hide_save_buttons(self, request, object_id):
-        """
-        Hook method to hide save buttons and disable POST on some conditions.
+        """Hook to conditionally hide save buttons and block POST requests.
 
-        :param request: HttpRequest object
-        :param object_id: Object ID of the current change page
-        :return: True to hide save buttons, False otherwise
+        Override this to disable editing for specific objects or users.
+
+        Args:
+            request: The current ``HttpRequest``.
+            object_id: Primary key of the object being edited.
+
+        Returns:
+            True to hide save buttons and reject POST, False otherwise.
         """
         return False
 
     def get_changelist_extra_context(self, request):
+        """Hook to add extra template context to the changelist view.
+
+        Args:
+            request: The current ``HttpRequest``.
+
+        Returns:
+            Dict of extra context variables merged into the changelist template.
+        """
         return {}
 
     def custom_changelist_actions(self, request):
+        """Hook called at the start of ``changelist_view`` for side effects.
+
+        Use this to perform actions (e.g. bulk updates) before the changelist
+        is rendered.
+
+        Args:
+            request: The current ``HttpRequest``.
+        """
         pass
 
     def _get_default_filters_redirect(self, request):
@@ -365,9 +579,27 @@ class EnhancedAdminMixin(admin.ModelAdmin,
                 [x[0] for x in self.get_ajax_action_fields()])
 
     def get_fieldset_section_exclusions(self, request, obj):
+        """Hook to dynamically exclude entire fieldset sections by title.
+
+        Args:
+            request: The current ``HttpRequest``.
+            obj: The model instance being edited, or None for add views.
+
+        Returns:
+            List of fieldset title strings to exclude.
+        """
         return []
 
     def get_fieldset_field_exclusions(self, request, obj):
+        """Hook to dynamically exclude individual fields from all fieldsets.
+
+        Args:
+            request: The current ``HttpRequest``.
+            obj: The model instance being edited, or None for add views.
+
+        Returns:
+            List of field name strings to remove from fieldsets.
+        """
         return []
 
     def get_fieldsets(self, request, obj=None):
@@ -447,6 +679,12 @@ class EnhancedAdminMixin(admin.ModelAdmin,
 
 
 class ReadonlyAdmin(admin.ModelAdmin):
+    """Read-only admin view that disables add, delete, and editing.
+
+    All model fields (except ``id``, ``created``, ``modified``) are displayed
+    as read-only in both the list and change views. Useful for audit/log
+    tables that should be viewable but not modifiable.
+    """
 
     def has_delete_permission(self, request, obj=None):
         return False

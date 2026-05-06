@@ -15,8 +15,27 @@ def get_decorator_key(func, func_name, by_args, enabled, *args, **kwargs):
 
 
 def parametrized(decorator):
-    """
-    Decorator to wrap other decorators to preserve the arguments intellisense in IDEs.
+    """Meta-decorator that allows decorators to accept arguments while preserving IDE intellisense.
+
+    Args:
+        decorator: The decorator function to wrap.
+
+    Returns:
+        Callable: A wrapper that accepts decorator arguments and returns the decorated function.
+
+    Example:
+        ```python
+        @parametrized
+        def my_decorator(func, arg1, arg2=True):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+            return wrapper
+
+        @my_decorator(arg1='value')
+        def my_func():
+            pass
+        ```
     """
 
     def layer(*args, **kwargs):
@@ -30,14 +49,26 @@ def parametrized(decorator):
 
 @parametrized
 def cache_data(func, timeout: int, by_args=False, enabled=True, custom_cache=None):
-    """
-    Decorator to cache the results of the method and return cached value if it's there. Useful for expensive calc.
+    """Cache the return value of a function using Django's cache framework.
 
-    :param func: function to decorate
-    :param timeout: Cache timeout.
-    :param by_args: Caches by arguments if *True*.
-    :param enabled: To enable or disable it.
-    :param custom_cache: To provide a custom instance of cache instead of default django one
+    Useful for expensive calculations or database queries.
+
+    Args:
+        func: The function to decorate (injected by ``@parametrized``).
+        timeout: Cache timeout in seconds.
+        by_args: If True, cache separately per unique arguments. Defaults to False.
+        enabled: Toggle caching on/off. Defaults to True.
+        custom_cache: Optional custom cache backend instance. Defaults to Django's default cache.
+
+    Returns:
+        Callable: Wrapped function with caching.
+
+    Example:
+        ```python
+        @cache_data(timeout=3600, by_args=True)
+        def get_expensive_data(user_id):
+            return compute(user_id)
+        ```
     """
 
     @wraps(func)
@@ -53,13 +84,25 @@ def cache_data(func, timeout: int, by_args=False, enabled=True, custom_cache=Non
 
 @parametrized
 def log_exec_time(func, func_name=None, enabled=getattr(settings, 'DR_LOG_EXEC_TIME', False), log_args=False):
-    """
-    Decorator to log calculate the execution time of the method.
+    """Log the execution time of a function via PrintLogger.
 
-    :param func: function to decorate
-    :param func_name: custom function name to log
-    :param enabled: To enable or disable it. Can be enabled globally by setting DR_LOG_EXEC_TIME=True in django settings.
-    :param log_args: Log arguments passed if *True*.
+    Can be enabled globally by setting ``DR_LOG_EXEC_TIME = True`` in Django settings.
+
+    Args:
+        func: The function to decorate (injected by ``@parametrized``).
+        func_name: Custom name for log output. Defaults to the function's ``__name__``.
+        enabled: Toggle logging on/off. Defaults to ``settings.DR_LOG_EXEC_TIME``.
+        log_args: If True, include function arguments in the log key.
+
+    Returns:
+        Callable: Wrapped function that logs its execution time.
+
+    Example:
+        ```python
+        @log_exec_time(func_name='my_task', log_args=True)
+        def process_data(items):
+            ...
+        ```
     """
 
     @wraps(func)

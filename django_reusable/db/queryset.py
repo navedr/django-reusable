@@ -2,10 +2,23 @@ from django.db import models
 from django.dispatch import Signal
 
 post_update = Signal()
+"""Signal sent after ``CustomQuerySet.update()`` completes.
+
+Provides ``sender`` (the model class), the update kwargs, and ``objs``
+(list of objects that were updated, fetched before the update).
+"""
+
 post_bulk_create = Signal()
+"""Signal sent after ``CustomManager.bulk_create()`` completes.
+
+Provides ``sender`` (the model class), ``objs`` (created objects),
+and ``batch_size``.
+"""
 
 
 class CustomQuerySet(models.query.QuerySet):
+    """QuerySet subclass that sends a ``post_update`` signal after ``.update()`` calls."""
+
     def update(self, **kwargs):
         # fetching objects to be updated before update happens, since update might affect the queryset
         objs = list(self)
@@ -15,6 +28,8 @@ class CustomQuerySet(models.query.QuerySet):
 
 
 class CustomManager(models.Manager):
+    """Manager that uses ``CustomQuerySet`` and sends ``post_bulk_create`` after bulk creates."""
+
     def get_queryset(self):
         return CustomQuerySet(self.model, using=self._db)
 

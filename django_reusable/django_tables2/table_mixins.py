@@ -3,6 +3,7 @@ from django_tables2.rows import BoundRow, BoundRows
 
 
 class EnhancedBoundRow(BoundRow):
+    """Extended BoundRow that supports rendering extra rows below the main row."""
 
     def new_rows(self):
         new_row_columns = self.table.new_row_columns
@@ -21,6 +22,8 @@ class EnhancedBoundRow(BoundRow):
 
 
 class EnhancedBoundRows(BoundRows):
+    """Extended BoundRows that yields EnhancedBoundRow instances with new-row support."""
+
     def __iter__(self):
         # Top pinned rows
         for pinned_record in self.generator_pinned_row(self.pinned_data.get('top')):
@@ -49,6 +52,15 @@ class EnhancedBoundRows(BoundRows):
 
 
 class EnhancedTable(Table):
+    """Extended django-tables2 Table with support for extra rows, dynamic field selection, and extra footers.
+
+    Uses the ``django_reusable/tables/enhanced-table.html`` template. Columns with
+    a ``new_row_index`` attribute are rendered as additional rows beneath the main row.
+
+    Args:
+        extra_data: Optional dict of extra context data available to columns/templates.
+        fields: Optional list of field names to display. All other columns are excluded.
+    """
 
     def __init__(self, *args, extra_data={}, fields=None, **kwargs):
         kwargs['template_name'] = 'django_reusable/tables/enhanced-table.html'
@@ -68,7 +80,9 @@ class EnhancedTable(Table):
                 if getattr(column.column, 'has_new_row_index', False)]
 
     def get_extra_footers(self):
-        """
-        :return: List of dict with column as key for each footer row
+        """Return extra footer rows for the table. Override in subclasses.
+
+        Returns:
+            list[dict]: List of dicts with column names as keys for each footer row.
         """
         return []

@@ -17,6 +17,21 @@ except ImportError:
 
 
 class LoginRequiredMiddleware:
+    """Middleware that redirects unauthenticated users to the login page.
+
+    Checks every request and redirects to ``settings.LOGIN_URL`` if the user
+    is not authenticated, unless the path matches one of the configured open
+    URLs.
+
+    Settings:
+        LOGIN_URL: The URL path to redirect unauthenticated users to.
+        OPEN_URLS: Dict of regex patterns for paths that do not require
+            authentication (e.g. ``{'signup': '^signup/$'}``). The login URL
+            is always included automatically.
+
+    The ``next`` query parameter is appended to the redirect URL so the user
+    returns to the originally requested page after login.
+    """
     def __init__(self, get_response):
         self.get_response = get_response
         self.login_url = settings.LOGIN_URL
@@ -37,10 +52,20 @@ class LoginRequiredMiddleware:
 
 
 class CRequestMiddleware(MiddlewareMixin):
-    """
-    Provides storage for the "current" request object, so that code anywhere
-    in your project can access it, without it having to be passed to that code
-    from the view.
+    """Thread-local storage for the current HTTP request.
+
+    Stores the active request per-thread so that code outside views (e.g.
+    model methods, signals, utility functions) can access it without explicit
+    parameter passing.
+
+    Usage:
+        ```python
+        from django_reusable.middleware.middleware import CRequestMiddleware
+
+        request = CRequestMiddleware.get_request()
+        if request and request.user.is_authenticated:
+            ...
+        ```
     """
     _requests = {}
 
@@ -81,9 +106,14 @@ class CRequestMiddleware(MiddlewareMixin):
 
 
 class ExceptionTrackerMiddleware(ErrorTracker):
-    """
-    Error tracker middleware that's invoked in the case of exception occurs,
-    this should be placed at the end of Middleware lists
+    """Middleware that captures unhandled exceptions into the ``Error`` model.
+
+    Place at the **end** of ``MIDDLEWARE`` so it catches exceptions from all
+    other middleware and views. Each unique exception is deduplicated by hash;
+    repeated occurrences increment the count.
+
+    For capturing exceptions in ``try/except`` blocks, use the module-level
+    ``error_tracker`` instance directly instead.
     """
 
     def __init__(self, get_response):

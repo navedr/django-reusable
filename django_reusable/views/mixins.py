@@ -20,6 +20,73 @@ from django_reusable.utils.user_utils import current_user_has_perms
 
 
 class CRUDViews(UserPassesTestMixin, SingleTableView):
+    """Full CRUD view generator that produces list, create, update, and delete views.
+
+    Subclass this and call ``as_view()`` to get a set of URL patterns providing
+    a complete CRUD interface backed by ``django-tables2`` for listing and
+    Django generic views for create/update/delete.
+
+    Attributes:
+        model: The Django model class for this CRUD set.
+        name: Unique URL namespace prefix. Must be overridden from the default
+            ``'crud-view'``.
+        title: Page title displayed in the list view header.
+        table_fields: List of field names to show in the table. If None, all
+            fields are shown (minus ``table_exclude``).
+        table_exclude: List of field names to hide from the table.
+        extra_table_columns: List of extra ``django-tables2`` column tuples
+            ``(name, Column)`` appended to the table.
+        allow_table_ordering: Enable column-header sorting. Defaults to True.
+        edit_fields: List of field names shown on the edit form.
+        add_fields: List of field names shown on the add form. Falls back to
+            ``edit_fields`` if empty.
+        allow_edit: Global toggle for edit links. Defaults to True.
+        allow_delete: Global toggle for delete links. Defaults to True.
+        allow_add: Global toggle for the "Add" button. Defaults to True.
+        edit_form_class: Optional custom ``ModelForm`` class for edit/add views.
+        object_title: Human-readable singular name for the model
+            (e.g. ``'Person'``), used in flash messages.
+        perms: List of permission strings required to access these views.
+        base_template: Template that the CRUD templates extend. **Required**.
+        raise_exception: If True, raise ``PermissionDenied`` instead of
+            redirecting to login. Defaults to True.
+        additional_index_links: List of extra links shown on the index page.
+        add_wizard_view_class: Optional ``SessionWizardView`` subclass used
+            instead of the default single-step create form.
+        filters: List of filter definitions. Each entry is either a field name
+            string (auto-detected choices) or a ``(field, config)`` tuple where
+            config has keys ``label``, ``get_choices`` (callable returning
+            choice tuples), and optionally ``filter`` (callable
+            ``fn(qs, value) -> qs``).
+        filters_widget: Form widget for filter dropdowns.
+        show_filter_label: Show labels next to filter fields. Defaults to False.
+        search_fields: List of field lookups for the search box (e.g.
+            ``['first_name', 'last_name']``). Empty list disables search.
+
+    Example:
+        ```python
+        class ManagerPersonView(CRUDViews):
+            base_template = 'admin/base_site.html'
+            name = 'person_manager'
+            model = Person
+            table_fields = ['first_name', 'last_name', 'position']
+            edit_fields = ['first_name', 'last_name']
+            object_title = 'Person'
+            filters = [
+                'position',
+                ('gender', dict(
+                    label='Gender',
+                    get_choices=lambda: [('Male', 'Male'), ('Female', 'Female')],
+                    filter=lambda qs, val: qs.filter(first_name='Naved') if val == 'Male' else qs,
+                )),
+            ]
+            search_fields = ['first_name', 'last_name']
+
+        urlpatterns = [
+            url(r'^people/', ManagerPersonView.as_view()),
+        ]
+        ```
+    """
     template_name = 'django_reusable/crud/index.pug'
     model = None
     title = None
@@ -47,22 +114,48 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
 
     @classmethod
     def get_edit_url_name(cls):
+        """Return the URL name for the edit view.
+
+        Returns:
+            URL name string in the format ``'{name}_-_edit'``.
+        """
         return f'{cls.name}_-_edit'
 
     @classmethod
     def get_delete_url_name(cls):
+        """Return the URL name for the delete view.
+
+        Returns:
+            URL name string in the format ``'{name}_-_delete'``.
+        """
         return f'{cls.name}_-_delete'
 
     @classmethod
     def get_add_url_name(cls):
+        """Return the URL name for the add/create view.
+
+        Returns:
+            URL name string in the format ``'{name}_-_add'``.
+        """
         return f'{cls.name}_-_add'
 
     @classmethod
     def get_list_url_name(cls):
+        """Return the URL name for the list/index view.
+
+        Returns:
+            URL name string equal to ``name``.
+        """
         return f'{cls.name}'
 
     @classmethod
     def has_perms(cls):
+        """Check if the current user has the required permissions.
+
+        Returns:
+            True if ``perms`` is empty or the current user has all listed
+            permissions.
+        """
         return current_user_has_perms(cls.perms) if cls.perms else True
 
     @classmethod
@@ -357,9 +450,25 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
         return self.allow_delete
 
     def allow_delete_for_record(self, record):
+        """Hook to conditionally disable delete for a specific record.
+
+        Args:
+            record: The model instance.
+
+        Returns:
+            True if the record can be deleted.
+        """
         return self.get_allow_delete()
 
     def allow_edit_for_record(self, record):
+        """Hook to conditionally disable editing for a specific record.
+
+        Args:
+            record: The model instance.
+
+        Returns:
+            True if the record can be edited.
+        """
         return self.get_allow_edit()
 
     def get_allow_add(self):
@@ -369,6 +478,11 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
         return self.table_exclude
 
     def get_extra_table_columns(self):
+        """Return extra columns to append to the table.
+
+        Returns:
+            List of ``(name, Column)`` tuples for ``django-tables2``.
+        """
         return self.extra_table_columns
 
     def get_table_fields(self):
@@ -383,9 +497,22 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
         return CRUDViewTable
 
     def get_edit_view_tables(self, record):
+        """Hook to add extra tables below the edit form.
+
+        Args:
+            record: The model instance being edited.
+
+        Returns:
+            List of ``django-tables2`` table instances to render.
+        """
         return []
 
     def get_additional_index_links(self):
+        """Return extra links to display on the list/index page.
+
+        Returns:
+            List of additional link definitions.
+        """
         return self.additional_index_links
 
     def _apply_filters(self, qs):
@@ -411,10 +538,31 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
         return qs
 
     def get_filters(self):
+        """Return the list of filter definitions for the index view.
+
+        Returns:
+            List of field name strings or ``(field, config)`` tuples.
+        """
         return self.filters
 
     def get_search_fields(self):
+        """Return the list of field lookups used by the search box.
+
+        Returns:
+            List of field name strings for ``__icontains`` lookups.
+        """
         return self.search_fields
 
     def get_success_url(self, type, pk):
+        """Return the URL to redirect to after a successful CRUD operation.
+
+        Override this to redirect to a detail page or stay on the edit form.
+
+        Args:
+            type: The operation type (``'create'``, ``'update'``, or ``'delete'``).
+            pk: Primary key of the affected object.
+
+        Returns:
+            URL string or lazy URL.
+        """
         return reverse_lazy(self.get_list_url_name())

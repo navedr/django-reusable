@@ -10,6 +10,15 @@ from django_reusable.forms.widgets import ReadOnlyInput
 
 
 class EnhancedColumn(Column):
+    """Extended django-tables2 Column with support for multi-row rendering and colspan.
+
+    Args:
+        new_row_index: If set to a positive int, this column's value is rendered
+            in an additional row below the main row at the given index.
+        colspan: Optional HTML colspan attribute for the ``<td>`` element.
+        no_empty_cell: If True, skip rendering this cell when the value is empty.
+    """
+
     def __init__(self,
                  new_row_index: int = None,
                  colspan: int = None,
@@ -31,6 +40,8 @@ class EnhancedColumn(Column):
 
 
 class TextFieldColumn(EnhancedColumn):
+    """Column that renders as a ``<textarea>`` form input."""
+
     empty_values = []
 
     def render(self, value):
@@ -40,6 +51,15 @@ class TextFieldColumn(EnhancedColumn):
 
 
 class EnhancedCheckBoxColumn(DefaultCheckBoxColumn):
+    """Checkbox column with select-all header toggle and POST-state preservation.
+
+    Args:
+        header: Optional custom header text.
+        attrs: HTML attribute dict.
+        checked: Callable to determine checked state. Defaults to reading from POST data.
+        bound_column: Column name used to read selected IDs from POST.
+    """
+
     def select_checked(self, value, record):
         request = global_request()
         selected_ids = dict(request.POST).get(self.bound_column, [])
@@ -64,6 +84,8 @@ class EnhancedCheckBoxColumn(DefaultCheckBoxColumn):
 
 
 class RadioButtonColumn(DefaultCheckBoxColumn):
+    """Column that renders as a radio button input (single selection per column)."""
+
     @property
     def header(self):
         return ''
@@ -80,6 +102,14 @@ class RadioButtonColumn(DefaultCheckBoxColumn):
 
 
 class ChoiceColumn(EnhancedColumn):
+    """Column that renders as a ``<select>`` dropdown.
+
+    Args:
+        choices: Iterable of ``(value, label)`` tuples for the select options.
+        widget: Form widget class to use. Defaults to ``forms.Select``.
+        css_class: CSS class for the widget. Defaults to ``'form-control'``.
+    """
+
     empty_values = []
 
     def __init__(self, choices, widget=forms.Select, css_class='form-control', *args, **kwargs):
@@ -95,6 +125,12 @@ class ChoiceColumn(EnhancedColumn):
 
 
 class CounterColumn(EnhancedColumn):
+    """Column that renders an auto-incrementing row counter.
+
+    Args:
+        start: Starting number for the counter. Defaults to 0.
+    """
+
     empty_values = []
 
     def __init__(self, start=0, *args, **kwargs):
@@ -116,6 +152,8 @@ def add_class(attrs, element, css_class):
 
 
 class NumberColumn(EnhancedColumn):
+    """Column with right-aligned text styling for numeric values."""
+
     def __init__(self, *args, **kwargs):
         attrs = kwargs.get('attrs', {})
         add_class(attrs, 'td', 'text-right')
@@ -125,6 +163,12 @@ class NumberColumn(EnhancedColumn):
 
 
 class CurrencyColumn(NumberColumn):
+    """Right-aligned column that formats values as currency.
+
+    Args:
+        human_format: If True, use abbreviated format (e.g. ``$1.5M``).
+            Defaults to False (standard ``$1,500,000.00`` format).
+    """
 
     def __init__(self, human_format=False, *args, **kwargs):
         self.human_format = human_format
@@ -135,6 +179,8 @@ class CurrencyColumn(NumberColumn):
 
 
 class HiddenIdInputColumn(EnhancedColumn):
+    """Column that renders a read-only hidden input containing the row's ID value."""
+
     def render(self, value):
         field = forms.CharField(widget=ReadOnlyInput())
         return mark_safe(field.widget.render('id', value))

@@ -9,6 +9,15 @@ from django_reusable.utils.address_utils import format_us_address
 
 
 class FileLinkWidget(forms.TextInput):
+    """TextInput with an adjacent "Open" link to the file if it exists on disk.
+
+    Renders a standard text input alongside a link button that opens the file
+    in a new tab, constructed from ``base_url`` + the field value.
+
+    Args:
+        base_path: Filesystem directory to check for file existence.
+        base_url: URL prefix used to build the download/view link.
+    """
     def __init__(self, base_path, base_url, attrs=None):
         self.base_path = base_path
         self.base_url = base_url
@@ -33,6 +42,11 @@ class FileLinkWidget(forms.TextInput):
 
 
 class ReadonlySelect(forms.Select):
+    """Select widget that displays the selected choice as plain text.
+
+    Renders the display text of the selected value with a hidden input to
+    preserve the value on form submission.
+    """
     def render(self, name, value, attrs=None, renderer=None):
         matches = [t for (v, t) in self.choices if v == value]
         text = matches[0] if matches else None
@@ -40,6 +54,11 @@ class ReadonlySelect(forms.Select):
 
 
 class ReadonlyMultiSelect(forms.SelectMultiple):
+    """SelectMultiple widget that displays selected choices as comma-separated text.
+
+    The actual ``<select>`` element is hidden; a visible text representation is
+    shown alongside it so the values are still submitted with the form.
+    """
     def render(self, name, value, attrs=None, renderer=None):
         value_list = value if isinstance(value, list) or isinstance(value, tuple) else eval(value)
         matches = [t for (v, t) in self.choices if v in value_list]
@@ -51,6 +70,11 @@ class ReadonlyMultiSelect(forms.SelectMultiple):
 
 
 class ReadOnlyInput(forms.TextInput):
+    """TextInput that displays the value as plain text with a hidden input.
+
+    The visible text cannot be edited; the hidden ``<input>`` preserves the
+    value for form submission. Used by ``ReadOnlyModelForm``.
+    """
     def render(self, name, value, attrs=None, renderer=None):
         attrs = attrs or {}
         attrs['style'] = 'display: none;'
@@ -58,10 +82,20 @@ class ReadOnlyInput(forms.TextInput):
 
 
 class DateInput(forms.DateInput):
+    """DateInput that renders as an HTML5 ``<input type="date">`` element."""
     input_type = 'date'
 
 
 class SingleCharSplitInput(forms.TextInput):
+    """TextInput that splits entry into individual single-character boxes.
+
+    Renders ``split`` number of 1-character ``<input>`` elements. As each
+    character is typed, focus advances to the next box. The concatenated value
+    is stored in a hidden input for form submission.
+
+    Args:
+        split: Number of single-character input boxes (default 2).
+    """
     def __init__(self, split=2, *args, **kwargs):
         self.split = split
         super().__init__(*args, **kwargs)
@@ -99,8 +133,14 @@ class SingleCharSplitInput(forms.TextInput):
 
 
 class USAddressWidget(forms.Widget):
-    """
-    A widget that renders multiple input fields for US address components.
+    """Widget that renders five separate inputs for US address entry.
+
+    Displays fields for street address, street address line 2, city, a state
+    dropdown (all 50 US states), and ZIP code. Data is submitted as a dict
+    with keys ``street_address``, ``street_address_2``, ``city``, ``state``,
+    ``zip_code``.
+
+    Uses template ``django_reusable/widgets/us_address_widget.html``.
     """
     template_name = 'django_reusable/widgets/us_address_widget.html'
 
@@ -192,8 +232,12 @@ class USAddressWidget(forms.Widget):
 
 
 class CurrencyInput(forms.TextInput):
-    """
-    A widget that formats input as US currency with $ sign and commas on blur
+    """TextInput with client-side US currency formatting.
+
+    Adds a ``currency-input`` CSS class and includes
+    ``django_reusable/js/currency-format.js`` which formats the value with
+    ``$`` sign and comma separators on blur. The raw numeric value is preserved
+    for form submission.
     """
 
     class Media:

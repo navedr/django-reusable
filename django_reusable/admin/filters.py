@@ -3,6 +3,24 @@ from django.contrib.admin import FieldListFilter
 
 
 class TextInputFilter(admin.SimpleListFilter):
+    """Base filter that renders a free-text input instead of a dropdown.
+
+    Subclass this and override ``queryset`` to implement the actual filtering
+    logic. The ``lookups`` method returns a dummy value to ensure Django
+    renders the filter in the sidebar.
+
+    Example:
+        ```python
+        class NameFilter(TextInputFilter):
+            title = 'Name'
+            parameter_name = 'name'
+
+            def queryset(self, request, queryset):
+                if self.value():
+                    return queryset.filter(name__icontains=self.value())
+                return queryset
+        ```
+    """
     template = 'django_reusable/filters/input-filter.html'
 
     def lookups(self, request, model_admin):
@@ -14,6 +32,15 @@ class TextInputFilter(admin.SimpleListFilter):
 
 
 class SearchInFilter(admin.SimpleListFilter):
+    """Dropdown filter that lets users choose which field to search in.
+
+    Used internally by ``EnhancedAdminMixin`` when ``search_in_choices`` is
+    set. The selected value narrows the admin search to a single field lookup.
+
+    Attributes:
+        lookup_choices: List of ``(field_lookup, label)`` tuples populated
+            from ``EnhancedAdminMixin.search_in_choices``.
+    """
     title = 'Search In'
     parameter_name = 'search'
     lookup_choices = []
@@ -26,11 +53,12 @@ class SearchInFilter(admin.SimpleListFilter):
 
 
 class MultiSelectFilterMixin:
-    """
-    Base mixin for multi-select admin filters using <select multiple>.
+    """Base mixin for multi-select admin filters using ``<select multiple>``.
 
     Provides common functionality for filters that allow multiple values
-    to be selected and filtered with OR logic (field__in lookup).
+    to be selected and filtered with OR logic (``field__in`` lookup).
+    Subclasses should also inherit from ``FieldListFilter`` and implement
+    ``lookups`` and ``__init__``.
     """
 
     template = 'django_reusable/filters/multi-select-filter.html'
@@ -92,14 +120,18 @@ class MultiSelectFilterMixin:
 
 
 class MultiSelectAllValuesFieldFilter(MultiSelectFilterMixin, FieldListFilter):
-    """
-    Multi-select filter for all distinct values in a model field.
+    """Multi-select filter populated from all distinct values of a field.
 
-    Usage:
+    Queries the database for unique non-null values and renders them as a
+    multi-select widget. Selected values are combined with OR logic.
+
+    Example:
+        ```python
         class MyAdmin(admin.ModelAdmin):
             list_filter = [
-                ('field_name', MultiSelectAllValuesFieldFilter),
+                ('last_name', MultiSelectAllValuesFieldFilter),
             ]
+        ```
     """
 
     def __init__(self, field, request, params, model, model_admin, field_path):
@@ -139,19 +171,19 @@ class MultiSelectAllValuesFieldFilter(MultiSelectFilterMixin, FieldListFilter):
 
 
 class MultiSelectChoicesFieldFilter(MultiSelectFilterMixin, FieldListFilter):
-    """
-    Multi-select filter for fields with predefined choices.
+    """Multi-select filter for fields with predefined ``choices``.
 
-    Works with fields where value != label, like:
-        position = models.CharField(
-            choices=[('SE', 'Software Engineer'), ('MGR', 'Manager')]
-        )
+    Uses the field's ``choices`` attribute to populate the options. Works
+    correctly when stored values differ from display labels (e.g.
+    ``('SE', 'Software Engineer')``).
 
-    Usage:
+    Example:
+        ```python
         class MyAdmin(admin.ModelAdmin):
             list_filter = [
                 ('position', MultiSelectChoicesFieldFilter),
             ]
+        ```
     """
 
     def __init__(self, field, request, params, model, model_admin, field_path):
@@ -186,14 +218,18 @@ class MultiSelectChoicesFieldFilter(MultiSelectFilterMixin, FieldListFilter):
 
 
 class MultiSelectRelatedFieldFilter(MultiSelectFilterMixin, FieldListFilter):
-    """
-    Multi-select filter for ForeignKey and ManyToManyField relationships.
+    """Multi-select filter for ForeignKey and ManyToManyField relationships.
 
-    Usage:
-        class MyAdmin(admin.ModelAdmin):
+    Populates options from the related model's queryset, using each object's
+    ``__str__`` as the display label and its primary key as the value.
+
+    Example:
+        ```python
+        class MusicianAdmin(admin.ModelAdmin):
             list_filter = [
-                ('author', MultiSelectRelatedFieldFilter),
+                ('person', MultiSelectRelatedFieldFilter),
             ]
+        ```
     """
 
     def __init__(self, field, request, params, model, model_admin, field_path):

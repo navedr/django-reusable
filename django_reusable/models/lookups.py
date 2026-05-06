@@ -2,15 +2,29 @@ from django.db.models import Transform, Lookup
 
 
 class JSONExtract(Transform):
-    """
-    A Django model lookup for extracting and performing case-insensitive
-    comparisons on JSON properties stored as JSON in field.
-    Used for lookups like:
-    - field__json_property='value'
-    - field__json_property__iexact='value'
-    - field__json_property__icontains='value'
-    - field__json_property__exact='value'
-    - field__json_property__contains='value'
+    """ORM Transform that extracts a JSON property for filtering and comparison.
+
+    Enables Django ORM lookups on individual keys within a JSON-stored TextField.
+    All comparisons are case-insensitive. Supports SQLite, PostgreSQL, and MySQL.
+
+    Supported lookup chains:
+
+    - ``field__key='value'`` -- exact (case-insensitive)
+    - ``field__key__exact='value'``
+    - ``field__key__iexact='value'``
+    - ``field__key__contains='value'`` -- LIKE with wildcards
+    - ``field__key__icontains='value'``
+
+    This class is used internally by ``USAddressField`` and should not normally
+    be instantiated directly. Use ``create_instance()`` to register new JSON
+    property lookups on a field.
+
+    Example:
+        ```python
+        # USAddressField registers these automatically:
+        Person.objects.filter(home_address__city='New York')
+        Person.objects.filter(home_address__state__icontains='n')
+        ```
     """
     @staticmethod
     def _get_sub(_lookup_name, expr):
@@ -39,10 +53,16 @@ class JSONExtract(Transform):
 
         return JSONExtractSub
 
-    """Base class for extracting JSON properties"""
-
     @classmethod
     def create_instance(cls, json_path):
+        """Create a JSONExtract subclass bound to a specific JSON property path.
+
+        Args:
+            json_path: The JSON key to extract (e.g. ``'city'``, ``'state'``).
+
+        Returns:
+            A JSONExtract subclass with ``lookup_name`` set to ``json_path``.
+        """
         class JSONExtractInstance(JSONExtract):
             lookup_name = json_path
 

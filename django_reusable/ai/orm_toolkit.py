@@ -12,6 +12,14 @@ logger = PrintLogger("DRY-ORMToolkit")
 
 
 def get_project_app_labels():
+    """Return sorted app labels for project-local Django apps (excluding third-party).
+
+    Filters out apps installed via site-packages, keeping only those whose
+    path is under ``settings.BASE_DIR``.
+
+    Returns:
+        list[str]: Sorted app label strings.
+    """
     base_dir = str(settings.BASE_DIR)
     return sorted({
         config.label for config in apps.get_app_configs()
@@ -22,7 +30,14 @@ def get_project_app_labels():
 
 
 def get_app_models_summary(allowed_apps=None):
-    """Generate a text summary of project apps and their models for use in LLM prompts."""
+    """Generate a text summary of project apps and their models for use in LLM prompts.
+
+    Args:
+        allowed_apps: Optional list of app labels to include. Defaults to all project apps.
+
+    Returns:
+        str: Multi-line string with one line per app listing its model names.
+    """
     project_apps = allowed_apps or get_project_app_labels()
     lines = []
     for label in project_apps:
@@ -128,26 +143,41 @@ def _build_queryset(model, filters=None, exclude=None):
 
 def query_model(model_name: str, options: Optional[dict] = None,
                 allowed_apps: Optional[List[str]] = None) -> str:
-    """Query a Django model using ORM filters.
+    """Query a Django model using ORM filters and return results as JSON.
 
     Args:
-        model_name: 'app_label.model_name' (e.g. 'properties.property').
-        options: dict with query options. All keys are optional:
-            - filters: ORM filter kwargs (e.g. {"status": "Active", "expiry_date__lte": "2026-12-31"}).
-            - exclude: ORM exclude kwargs (e.g. {"status": "Sold"}).
-            - fields: list of field names for .values(). Supports FK traversal
-                with __ (e.g. ["id", "tenant__name", "property_units__property__address"]).
-            - order_by: list of field names for ordering. Prefix with - for descending.
-            - limit: max results (default 50).
-            - count_only: if true, return only the total count.
-            - distinct_field: get distinct values for this field (e.g. "status").
-            - aggregate: dict of aggregations. Keys are output names, values have
-                'func' (count/sum/avg/min/max) and 'field'.
-                Example: {"total": {"func": "sum", "field": "amount"}}
-        allowed_apps: List of app labels allowed. Defaults to project apps.
+        model_name: Model identifier as ``'app_label.model_name'``
+            (e.g. ``'properties.property'``).
+        options: Dict with query options. All keys are optional:
+
+            - **filters** (dict): ORM filter kwargs passed to ``.filter()``.
+              Supports all Django lookups
+              (e.g. ``{"status": "Active", "expiry_date__lte": "2026-12-31"}``).
+            - **exclude** (dict): ORM exclude kwargs passed to ``.exclude()``
+              (e.g. ``{"status": "Sold"}``).
+            - **fields** (list[str]): Field names for ``.values()``. Supports FK
+              traversal via ``__`` notation
+              (e.g. ``["id", "tenant__name", "unit__property__address"]``).
+              Defaults to all concrete non-M2M fields.
+            - **order_by** (list[str]): Field names for ``.order_by()``. Prefix
+              with ``-`` for descending (e.g. ``["-created_date", "name"]``).
+            - **limit** (int): Maximum number of results to return. Defaults to 50.
+            - **count_only** (bool): If True, return only ``{"total_count": N}``
+              without fetching rows.
+            - **distinct_field** (str): Return distinct values for this single field
+              (e.g. ``"status"``). Returns ``{"field", "total_count", "values"}``.
+            - **aggregate** (dict): Aggregation specifications. Keys are output
+              names, values are dicts with ``'func'`` and ``'field'`` keys.
+              Supported funcs: ``count``, ``sum``, ``avg``, ``min``, ``max``.
+              Example: ``{"total": {"func": "sum", "field": "amount"}}``.
+
+        allowed_apps: List of app labels permitted for querying. Defaults to
+            project apps (auto-detected from ``settings.BASE_DIR``).
 
     Returns:
-        JSON string with query results. Always includes 'total_count' (before limit).
+        str: JSON string. On success, contains ``total_count`` (count before limit),
+        ``count`` (rows returned), and ``results`` (list of dicts). On error,
+        contains ``{"error": "message"}``.
     """
     try:
         model, error = _resolve_model(model_name, allowed_apps)
