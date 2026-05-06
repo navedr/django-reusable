@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head><link href="/Users/narangwa/www/static/kinvoice/assets/css/helper.css" rel="stylesheet" type="text/css" /><link href="/Users/narangwa/www/static/kinvoice/libs/bootstrap/css/bootstrap.custom.css" rel="stylesheet" type="text/css" media="screen, projection" /><link href="/Users/narangwa/www/static/kinvoice/assets/css/roboto.css" rel="stylesheet" type="text/css" /><link href="/Users/narangwa/www/static/kinvoice/assets/css/kit-base.css" rel="stylesheet" type="text/css" />
+  </head>
+  <script>function subst() {
+  var vars = {};
+  var query_strings_from_url = document.location.search.substring(1).split('&');
+  for (var query_string in query_strings_from_url) {
+    if (query_strings_from_url.hasOwnProperty(query_string)) {
+      var temp_var = query_strings_from_url[query_string].split('=', 2);
+      vars[temp_var[0]] = decodeURI(temp_var[1]);
+    }
+  }
+  var css_selector_classes = ['page', 'frompage', 'topage', 'webpage', 'section', 'subsection', 'date', 'isodate', 'time', 'title', 'doctitle', 'sitepage', 'sitepages'];
+  for (var css_class in css_selector_classes) {
+    if (css_selector_classes.hasOwnProperty(css_class)) {
+      var element = document.getElementsByClassName(css_selector_classes[css_class]);
+      for (var j = 0; j < element.length; ++j) {
+        element[j].textContent = vars[css_selector_classes[css_class]];
+      }
+    }
+  }
+}
+  </script>
+  <body onload="subst()">
+    <hr class="border-black mb0">
+    <p><i>
+&#169; - 2026 Isenberg Bath Corporation. All Rights Reserved. No part of this publication may be reproduced,
+distributed, or transmitted in any form or by any
+means, including photocopying, recording, or other electronic or mechanical methods, without the prior written
+permission of the copyright holder.</i>
+    </p>
+    <div style="text-align:right;">Page &nbsp;<span class="page"></span> of &nbsp;<span class="topage"></span>
+    </div>
+  </body>
+</html>
