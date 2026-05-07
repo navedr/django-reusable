@@ -24,6 +24,7 @@ const EnhancedAdminMixin = {
                 </li>`,
             );
         });
+        this.loadLazyListFields(data.lazy_list_fields || []);
     },
     initChangeForm: function (data) {
         if (data.hide_save_buttons) {
@@ -38,6 +39,29 @@ const EnhancedAdminMixin = {
             });
         }
         this.loadLazyFields(data.lazy_load_fields || []);
+    },
+    loadLazyListFields: function (fields) {
+        fields.forEach(function (fieldName) {
+            var $spans = $('span.dr-lazy-list[data-field="' + fieldName + '"]');
+            if (!$spans.length) return;
+            var pks = [];
+            $spans.each(function () { pks.push($(this).data("pk")); });
+            var url = location.pathname + "dr-lazy-list-field/" + fieldName + "/";
+            fetch(url, {
+                method: "POST",
+                headers: {"Content-Type": "application/json", "X-CSRFToken": $("[name=csrfmiddlewaretoken]").val()},
+                body: JSON.stringify({pks: pks})
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                $spans.each(function () {
+                    var pk = String($(this).data("pk"));
+                    if (data[pk] !== undefined) {
+                        $(this).replaceWith(data[pk]);
+                    }
+                });
+            }).catch(function () {
+                $spans.html('<span style="color:red">Failed</span>');
+            });
+        });
     },
     loadLazyFields: function (fields) {
         fields.forEach(function (fieldName) {

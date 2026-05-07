@@ -432,10 +432,15 @@ class EnhancedAdminMixin(admin.ModelAdmin,
         search_in_required: If True, a search query without a "Search In"
             selection shows a warning and returns no results. Defaults to False.
         lazy_load_fields: List of readonly field names whose content should be
-            fetched asynchronously after page load. The field method should
-            return a placeholder (e.g. "Loading..."), and a corresponding
+            fetched asynchronously after page load on the **change form**. The
+            field method should return a placeholder, and a corresponding
             ``get_<field_name>_content(self, obj)`` method provides the real
             content via an AJAX endpoint. Requires ``auto_update_template=True``.
+        lazy_list_fields: List of field names whose content should be fetched
+            asynchronously on the **changelist**. In ``list_display`` methods,
+            call ``self.lazy_list_placeholder(field_name, instance.pk)`` to
+            render a placeholder. A single batched AJAX call per field fetches
+            content for all visible rows via ``get_<field_name>_content(self, obj)``.
 
     Example:
         ```python
@@ -455,11 +460,18 @@ class EnhancedAdminMixin(admin.ModelAdmin,
                 ('nom', lambda instance: instance.first_name),
             ]
             lazy_load_fields = ['expensive_field']
+            lazy_list_fields = ['expensive_column']
 
             def expensive_field(self, instance):
                 return 'Loading...'
 
             def get_expensive_field_content(self, instance):
+                return instance.compute_something_slow()
+
+            def expensive_column(self, instance):
+                return self.lazy_list_placeholder('expensive_column', instance.pk)
+
+            def get_expensive_column_content(self, instance):
                 return instance.compute_something_slow()
         ```
     """
@@ -628,6 +640,12 @@ class EnhancedAdminMixin(admin.ModelAdmin,
         return fieldsets
 
     lazy_load_fields = []
+    lazy_list_fields = []
+
+    @staticmethod
+    def lazy_list_placeholder(field_name, pk):
+        return mark_safe(f'<span class="dr-lazy-list" data-field="{field_name}" data-pk="{pk}"'
+                         f' style="color:#999">Loading...</span>')
 
     def _get_lazy_field_content(self, request, object_id, field_name):
         method = getattr(self, f'get_{field_name}_content', None)
@@ -635,6 +653,18 @@ class EnhancedAdminMixin(admin.ModelAdmin,
             obj = self.model.objects.get(pk=object_id)
             return HttpResponse(method(obj))
         return HttpResponse('')
+
+    def _get_lazy_list_field_batch(self, request, field_name):
+        import json as _json
+        method = getattr(self, f'get_{field_name}_content', None)
+        if not method or request.method != 'POST':
+            return JsonResponse({})
+        pks = _json.loads(request.body).get('pks', [])
+        objects = self.model.objects.filter(pk__in=pks)
+        result = {}
+        for obj in objects:
+            result[str(obj.pk)] = method(obj)
+        return JsonResponse(result)
 
     def _get_common_mixin_js_data(self):
         return dict(
@@ -646,6 +676,7 @@ class EnhancedAdminMixin(admin.ModelAdmin,
     def _changelist_mixin_js_data(self, request):
         return JsonResponse(dict(
             **self._get_common_mixin_js_data(),
+            lazy_list_fields=self.lazy_list_fields,
             **super()._changelist_mixin_js_data(request)
         ), encoder=CustomEncoder)
 
@@ -676,6 +707,9 @@ class EnhancedAdminMixin(admin.ModelAdmin,
             path('<path:object_id>/change/dr-lazy-field/<str:field_name>/',
                  self._get_lazy_field_content,
                  name='%s_%s-dr-lazy-field' % info),
+            path('dr-lazy-list-field/<str:field_name>/',
+                 self._get_lazy_list_field_batch,
+                 name='%s_%s-dr-lazy-list-field' % info),
         ]
 
         def get_action_link_view(_view_name, _attrs):
