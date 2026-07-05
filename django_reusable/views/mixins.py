@@ -434,7 +434,7 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
         class DeleteLinkColumn(LinkColumn):
             def render(self, value, record, bound_column):
                 if crud.allow_delete_for_record(record):
-                    return super().render(value, record, bound_column)
+                    return super().render(record=record, value=value)
                 return ''
 
         return DeleteLinkColumn(viewname=self.get_delete_url_name(),
