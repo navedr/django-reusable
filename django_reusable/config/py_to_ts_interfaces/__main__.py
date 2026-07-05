@@ -1,6 +1,6 @@
 import os
 import traceback
-from typing import Union
+from typing import List, Union
 
 from django_reusable.logging.loggers import PrintLogger
 from .enums import EnumDefinition
@@ -23,14 +23,14 @@ def python_to_typescript_file(python_code: str) -> str:
     lines = [line for line in lines if line and not line.isspace() and not line.startswith(("from ", "#", "@"))]
 
     # group the lines for each enum/class definition together
-    definition_groups: list[list[str]] = []
+    definition_groups: List[List[str]] = []
     for line in lines:
         if is_class_definition(line) or is_string_definition(line):
             definition_groups.append([])
         definition_groups[-1].append(line)
 
     # convert each group into either an EnumDefinition or InterfaceDefinition object
-    processed_definitions: list[Union[EnumDefinition, InterfaceDefinition, StringDefinition]] = []
+    processed_definitions: List[Union[EnumDefinition, InterfaceDefinition, StringDefinition]] = []
     for definition in definition_groups:
         try:
             if definition[0].endswith("(Enum):"):
