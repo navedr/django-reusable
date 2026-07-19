@@ -29,6 +29,7 @@ setuptools.setup(
         'Django>=2.0',
         'django-tables2>=1.21.2',
         'django-crispy-forms>=1.7.2',
+        'pytz',
     ],
     classifiers=[
         'Development Status :: 5 - Production/Stable',

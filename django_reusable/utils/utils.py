@@ -22,7 +22,7 @@ from django.template import Context, Template
 from django.template import engines
 from django.urls import resolve
 from django.utils import encoding
-from django.utils.encoding import Promise, force_text
+from django.utils.encoding import Promise, force_str
 from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView
 from pytz import timezone, utc
@@ -249,19 +249,19 @@ def unicode_to_string(x):
 class CustomEncoder(DjangoJSONEncoder):
     """Extended JSON encoder that handles Django FieldFile and lazy translation strings.
 
-    Falls back to ``force_text`` for any object the parent encoder cannot handle.
+    Falls back to ``force_str`` for any object the parent encoder cannot handle.
     """
 
     def default(self, o):
         if isinstance(o, FieldFile):
             return o.url if o.name else ''
         elif isinstance(o, Promise):
-            return force_text(o)
+            return force_str(o)
         else:
             try:
                 return super().default(o)
             except:
-                return force_text(o)
+                return force_str(o)
 
 
 def coalesce(value, replace):

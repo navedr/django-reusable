@@ -2,14 +2,13 @@ from collections import OrderedDict
 from functools import reduce
 
 from django import forms
-from django.conf.urls import url
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.exceptions import ImproperlyConfigured
 from django.db import transaction, models
 from django.db.models import QuerySet, Q
 from django.http import HttpResponseRedirect
-from django.urls import reverse_lazy, include
+from django.urls import reverse_lazy, include, re_path
 from django.utils.safestring import mark_safe
 from django.views.generic import CreateView, UpdateView, DeleteView
 from django_tables2 import SingleTableView, LinkColumn, A
@@ -83,7 +82,7 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
             search_fields = ['first_name', 'last_name']
 
         urlpatterns = [
-            url(r'^people/', ManagerPersonView.as_view()),
+            re_path(r'^people/', ManagerPersonView.as_view()),
         ]
         ```
     """
@@ -268,13 +267,13 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
         if cls.add_wizard_view_class:
             add_urls.extend(cls._get_add_wizard_urls())
         else:
-            add_urls.append(url(r'^new/$', CRUDCreateView.as_view(), name=cls.get_add_url_name()))
+            add_urls.append(re_path(r'^new/$', CRUDCreateView.as_view(), name=cls.get_add_url_name()))
 
         url_patterns = [
-            url(r'^$', view, name=cls.get_list_url_name()),
+            re_path(r'^$', view, name=cls.get_list_url_name()),
             *add_urls,
-            url(r'^(?P<pk>\d+)/edit/$', CRUDUpdateView.as_view(), name=cls.get_edit_url_name()),
-            url(r'^(?P<pk>\d+)/delete/$', CRUDDeleteView.as_view(), name=cls.get_delete_url_name())
+            re_path(r'^(?P<pk>\d+)/edit/$', CRUDUpdateView.as_view(), name=cls.get_edit_url_name()),
+            re_path(r'^(?P<pk>\d+)/delete/$', CRUDDeleteView.as_view(), name=cls.get_delete_url_name())
         ]
         return include(url_patterns)
 
@@ -333,8 +332,8 @@ class CRUDViews(UserPassesTestMixin, SingleTableView):
         add_wizard_view = AddWizardView.as_view(url_name=step_url_name,
                                                 done_step_name='finished')
         return [
-            url(r'^new/(?P<step>.+)/$', add_wizard_view, name=step_url_name),
-            url(r'^new/$', add_wizard_view, name=add_url_name),
+            re_path(r'^new/(?P<step>.+)/$', add_wizard_view, name=step_url_name),
+            re_path(r'^new/$', add_wizard_view, name=add_url_name),
         ]
 
     def test_func(self):

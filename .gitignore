@@ -8,3 +8,5 @@ site
 .idea
 *.sqlite3
 .claude
+example/venv312/
+example/static_verify/
