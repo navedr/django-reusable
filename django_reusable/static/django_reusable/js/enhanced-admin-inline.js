@@ -1,14 +1,15 @@
+(function ($) {
 const EnhancedAdminInline = {
     select2Inlines: [],
     init: function () {
         this.initInlineSelect2();
     },
     initInlineSelect2: function () {
-        if (Suit.$.fn.select2) {
+        if ($.fn.select2) {
             $.each($(".dr-inline-select2"), $.proxy(this.convertInlineSelectToSelect2, this));
             const observer = new MutationObserver(mutations => {
                 mutations.forEach(mutation => mutation.addedNodes.forEach(
-                    node => this.onDomNodeInserted(Suit.$(node))));
+                    node => this.onDomNodeInserted($(node))));
             });
 
             observer.observe(document, {
@@ -25,14 +26,14 @@ const EnhancedAdminInline = {
         this.select2Inlines
             .filter(({newFormClass}) => $newForm.hasClass(newFormClass))
             .forEach(({parentClass, options}) =>
-                $newForm.find(`.${parentClass} select:visible:not(.select2-offscreen)`).select2({
+                $newForm.find(`.${parentClass} select:visible:not(.select2-offscreen):not(.select2-hidden-accessible)`).select2({
                     width: "resolve",
                     ajax: {
                         transport: function (params, success, failure) {
                             let results = options;
                             if (params.data.q) {
                                 results = results.filter(item =>
-                                    item.text.toLowerCase().match(params.data.q.toLowerCase()),
+                                    item.text.toLowerCase().includes(params.data.q.toLowerCase()),
                                 );
                             }
                             success({results});
@@ -42,8 +43,8 @@ const EnhancedAdminInline = {
             );
     },
     convertInlineSelectToSelect2: function (i, el) {
-        const $select = Suit.$(el);
-        if ($select.parents(".empty-form").size()) {
+        const $select = $(el);
+        if ($select.parents(".empty-form").length) {
             // td for tabular inline and control-group for stacked inline
             const parentClass = $select
                     .parents("td, .control-group")
@@ -70,3 +71,5 @@ const EnhancedAdminInline = {
 $(document).ready(function () {
     EnhancedAdminInline.init();
 });
+
+})(window.Suit ? window.Suit.$ : (window.django && window.django.jQuery) || window.jQuery);

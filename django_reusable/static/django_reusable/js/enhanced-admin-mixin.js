@@ -1,7 +1,8 @@
+(function ($) {
 const EnhancedAdminMixin = {
     init: function ({isChangelist, isChangeForm}) {
         const self = this;
-        fetch(`${location.pathname}dr-admin-mixin-js-data`)
+        fetch(`${location.pathname}dr-admin-mixin-js-data/`)
             .then(response => response.json()).then(data => {
             if (!data.enabled) {
                 return;
@@ -16,13 +17,19 @@ const EnhancedAdminMixin = {
         });
     },
     initChangelist: function (data) {
-        data.extra_links.forEach(({url, config: {link_class, new_tab, link_text}}) => {
-            $("ul.breadcrumb").append(
-                `<li>
-                    <span class="divider">|</span>
-                    <a href="${url}" class="btn ${link_class}" target="${new_tab ? "_blank" : ""}">${link_text}</a>
-                </li>`,
-            );
+        const $legacyBreadcrumb = $("ul.breadcrumb, ol.breadcrumb").first();
+        let $tools = $("#changelist .object-tools").first();
+        if (!$legacyBreadcrumb.length && !$tools.length && (data.extra_links || []).length) {
+            $tools = $('<div class="object-tools"></div>').prependTo('#changelist');
+        }
+        (data.extra_links || []).forEach(({url, config: {link_class, new_tab, link_text}}) => {
+            const $link = $('<a>').attr('href', url).addClass('btn ' + link_class).text(link_text);
+            if (new_tab) $link.attr({target: '_blank', rel: 'noopener'});
+            if ($legacyBreadcrumb.length) {
+                $legacyBreadcrumb.append($('<li>').append($link));
+            } else {
+                $tools.append($tools.is('ul, ol') ? $('<li>').append($link) : $link);
+            }
         });
         this.loadLazyListFields(data.lazy_list_fields || []);
     },
@@ -30,10 +37,11 @@ const EnhancedAdminMixin = {
         if (data.hide_save_buttons) {
             $(".submit-row").remove();
         } else {
-            data.extra_submit_buttons.forEach(({name, config: {btn_text, btn_class, confirm}}) => {
-                const $button = $(`<button name="__${name}" type="submit" class="btn ${btn_class}">${btn_text}</button>`);
+            (data.extra_submit_buttons || []).forEach(({name, config: {btn_text, btn_class, confirm}}) => {
+                const $button = $('<button type="submit">').attr('name', '__' + name)
+                    .addClass('btn ' + btn_class).text(btn_text);
                 if (confirm) {
-                    $button.attr("onclick", `return confirm('${confirm}');`);
+                    $button.on("click", function () { return window.confirm(confirm); });
                 }
                 $(".submit-row").append($button);
             });
@@ -100,7 +108,7 @@ const EnhancedAdminMixin = {
 };
 
 $(document).ready(function () {
-    const isChangelist = !!$("#changelist").size();
+    const isChangelist = !!$("#changelist").length;
     const isChangeForm = $("body").hasClass("change-form");
     if (isChangelist || isChangeForm) {
         EnhancedAdminMixin.init({
@@ -109,3 +117,5 @@ $(document).ready(function () {
         });
     }
 });
+
+})(window.Suit ? window.Suit.$ : (window.django && window.django.jQuery) || window.jQuery);

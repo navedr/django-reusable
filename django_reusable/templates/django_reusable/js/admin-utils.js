@@ -1,3 +1,7 @@
+;(function ($) {
+// Some themes include core.js both directly and through Django form media.
+if (window.drAdminUtilsInitialized) return;
+window.drAdminUtilsInitialized = true;
 const DjangoReusableAdminUtils = {
     init: function ({isChangelist, isChangeForm}) {
         let app, model;
@@ -43,7 +47,7 @@ const DjangoReusableAdminUtils = {
 };
 
 $(document).ready(function () {
-    const isChangelist = !!$("#changelist").size();
+    const isChangelist = !!$("#changelist").length;
     const isChangeForm = $("body").hasClass("change-form");
     if (isChangelist || isChangeForm) {
         DjangoReusableAdminUtils.init({
@@ -52,3 +56,5 @@ $(document).ready(function () {
         });
     }
 });
+
+})(window.Suit ? window.Suit.$ : (window.django && window.django.jQuery) || window.jQuery);
