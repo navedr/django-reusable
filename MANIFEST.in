@@ -1,5 +1,6 @@
 include *.py
 include COPYING
 include AUTHORS
+include version.txt
 recursive-include django_reusable *
 recursive-exclude django_reusable *.pyc
